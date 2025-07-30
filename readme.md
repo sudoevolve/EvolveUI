@@ -43,9 +43,8 @@ EvolveUI/
 │ ├── ShadowInput.qml  
 │ ├── HoverCard.qml  
 │ ├── Switch.qml  
-│ ├── ...  
-│  
-├── Theme.qml # 全局样式与颜色定义  
+│ ├── Theme.qml # 全局样式与颜色定义
+│    
 ├── main.qml # 示例用法  
 
 ````
