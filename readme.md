@@ -1,5 +1,3 @@
-
-```markdown
 # EvolveUI - Modern QML 组件库
 
 ![EvolveUI Demo](./gif.gif)
