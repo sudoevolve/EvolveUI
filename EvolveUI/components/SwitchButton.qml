@@ -1,4 +1,3 @@
-// MySwitch.qml
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Effects
@@ -14,7 +13,12 @@ Rectangle {
 
     // === 样式属性 ===
     property real radius: 15
-    property int fontSize: 16
+    readonly property real contentScale: 0.4       // 40% 高度比例
+    readonly property real trackWidth: root.height * 1
+    readonly property real trackHeight: root.height * contentScale
+    readonly property real thumbSize: root.height * contentScale
+
+    property int fontSize: root.height * contentScale
     property color buttonColor: theme.secondaryColor
     property color hoverColor: Qt.darker(buttonColor, 1.2)
     property color textColor: theme.textColor
@@ -24,8 +28,10 @@ Rectangle {
 
     property color shadowColor: theme.shadowColor
 
+    readonly property int horizontalPadding: 16
+
     implicitHeight: 52
-    implicitWidth: layout.implicitWidth + 32
+    implicitWidth: layout.implicitWidth + horizontalPadding * 2
     color: "transparent"
 
     transform: Scale {
@@ -59,11 +65,11 @@ Rectangle {
         anchors.centerIn: parent
         spacing: 12
 
-        // === 滑块开关 ===
+        // === 滑块轨道 ===
         Rectangle {
             id: track
-            width: 40
-            height: 22
+            width: trackWidth
+            height: trackHeight
             radius: height / 2
             color: checked ? theme.textColor : "#999999"
             Layout.alignment: Qt.AlignVCenter
@@ -73,12 +79,14 @@ Rectangle {
 
             Rectangle {
                 id: thumb
-                width: 18
-                height: 18
-                radius: 9
+                width: thumbSize
+                height: thumbSize
+                radius: thumbSize / 2
                 color: root.buttonColor
                 anchors.verticalCenter: parent.verticalCenter
-                x: checked ? (track.width - width - 2) : 2
+
+                property int edgePadding: 0
+                x: checked ? (track.width - width - edgePadding) : edgePadding
 
                 Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
             }
@@ -86,11 +94,13 @@ Rectangle {
 
         // === 文字 ===
         Text {
+            id: label
             text: root.text
             color: root.textColor
-            font.pixelSize: root.fontSize
+            font.pixelSize: fontSize
             font.bold: true
             verticalAlignment: Text.AlignVCenter
+            Layout.preferredWidth: label.implicitWidth
         }
     }
 

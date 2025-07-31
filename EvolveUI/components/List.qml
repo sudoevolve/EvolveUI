@@ -1,8 +1,7 @@
-// IconListView.qml
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
+import QtQuick.Controls 2.15
 import QtQuick.Effects
-import "."
 
 Rectangle {
     id: root
@@ -13,7 +12,7 @@ Rectangle {
     }
 
     // === 外部接口 ===
-    property var model
+    property var model: []
     signal itemClicked(int index, var modelData)
 
     // === 样式配置 ===
@@ -26,7 +25,7 @@ Rectangle {
     property real itemHoverScale: 1.0
     property real pressedScale: 0.96
 
-    // === 阴影样式 ===
+    // 阴影相关
     property bool shadowEnabled: true
     property color shadowColor: theme.shadowColor
     property real shadowBlur: theme.shadowBlur
@@ -34,30 +33,59 @@ Rectangle {
     property real shadowVerticalOffset: theme.shadowYOffset
 
     color: "transparent"
-    implicitWidth: 250
-    implicitHeight: 400
 
-    // === 阴影效果 ===
-    MultiEffect {
-        source: background
-        anchors.fill: background
-        visible: root.shadowEnabled
-        shadowEnabled: root.shadowEnabled
-        shadowColor: root.shadowColor
-        shadowBlur: root.shadowBlur
-        shadowHorizontalOffset: root.shadowHorizontalOffset
-        shadowVerticalOffset: root.shadowVerticalOffset
+    // 用于测量文本最大宽度的隐藏文本
+    Text {
+        id: measureText
+        visible: false
+        font.pixelSize: root.itemFontSize
+        font.bold: false
     }
 
-    // === 背景层 ===
+    // 计算最大文本宽度
+    property real maxTextWidth: 0
+    function updateMaxTextWidth() {
+        var maxWidth = 0;
+        for (var i = 0; i < model.length; i++) {
+            var itemText = model[i].display || "";
+            measureText.text = itemText;
+            if (measureText.width > maxWidth)
+                maxWidth = measureText.width;
+        }
+        maxTextWidth = maxWidth;
+    }
+
+    Component.onCompleted: updateMaxTextWidth()
+    onModelChanged: updateMaxTextWidth()
+
+    // 自适应宽度 = 图标宽度 + 文本最大宽度 + 左右内边距 + 内部间距
+    property int horizontalPadding: 15
+    property int iconTextSpacing: 12
+    implicitWidth: horizontalPadding * 2 + root.itemIconSize + iconTextSpacing + maxTextWidth + 10
+    implicitHeight: model.length > 0
+        ? model.length * (itemHeight + itemSpacing) - itemSpacing + listPadding * 2
+        : itemHeight + listPadding * 2
+
+    width: implicitWidth
+    height: implicitHeight
+
     Rectangle {
         id: background
         anchors.fill: parent
+        clip: true
         radius: root.radius
         color: theme.secondaryColor
+
+        layer.enabled: root.shadowEnabled
+        layer.effect: MultiEffect {
+            shadowEnabled: root.shadowEnabled
+            shadowColor: root.shadowColor
+            shadowBlur: root.shadowBlur
+            shadowHorizontalOffset: root.shadowHorizontalOffset
+            shadowVerticalOffset: root.shadowVerticalOffset
+        }
     }
 
-    // === 列表 ===
     ListView {
         id: listView
         anchors.fill: parent
@@ -65,6 +93,8 @@ Rectangle {
         clip: true
         spacing: root.itemSpacing
         model: root.model
+        // 关键点：强制宽度 = root.width - 左右padding
+        width: root.width - root.listPadding * 2
 
         delegate: Rectangle {
             id: itemContainer
@@ -94,9 +124,10 @@ Rectangle {
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 15
-                anchors.rightMargin: 15
-                spacing: 12
+                anchors.leftMargin: root.listPadding
+                anchors.rightMargin: root.listPadding
+                spacing: root.itemIconSize > 0 ? root.itemIconSize / 2 : 12
+                Layout.alignment: Qt.AlignVCenter
 
                 Text {
                     id: icon
@@ -117,7 +148,7 @@ Rectangle {
                     color: theme.textColor
                     font.pixelSize: root.itemFontSize
                     elide: Text.ElideRight
-                    Layout.fillWidth: true
+                    Layout.fillWidth: true  // 填满剩余宽度自适应
                     verticalAlignment: Text.AlignVCenter
                 }
             }

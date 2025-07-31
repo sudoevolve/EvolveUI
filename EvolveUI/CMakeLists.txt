@@ -28,7 +28,7 @@ qt_add_qml_module(appEvolveUI
         QML_FILES components/SwitchButton.qml
         QML_FILES components/CheckBox.qml
         QML_FILES components/RadioButton.qml
-        QML_FILES components/Dropdown.qml
+        QML_FILES
         QML_FILES components/Slider.qml
 )
 

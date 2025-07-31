@@ -1,4 +1,3 @@
-// MyCheckbox.qml
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Effects
@@ -13,7 +12,10 @@ Rectangle {
     signal toggled(bool checked)
 
     // === 样式属性 ===
-    property int fontSize: 16
+    readonly property real contentScale: 0.4      // 文字和checkbox相对高度比例
+    readonly property real boxSize: root.height * contentScale
+    readonly property real fontSize: root.height * contentScale
+
     property real radius: 15
     property color buttonColor: theme.secondaryColor
     property color hoverColor: Qt.darker(buttonColor, 1.2)
@@ -24,8 +26,11 @@ Rectangle {
 
     property color shadowColor: theme.shadowColor
 
+    readonly property int horizontalPadding: 16
+
     implicitHeight: 52
-    implicitWidth: layout.implicitWidth + 32
+    implicitWidth: layout.implicitWidth + horizontalPadding * 2
+
     color: "transparent"
 
     transform: Scale {
@@ -61,8 +66,8 @@ Rectangle {
 
         Rectangle {
             id: box
-            width: 20
-            height: 20
+            width: boxSize
+            height: boxSize
             radius: 4
             color: checked ? checkmarkColor : "transparent"
             border.color: theme.textColor
@@ -74,7 +79,7 @@ Rectangle {
             Text {
                 anchors.centerIn: parent
                 text: checked ? "\u2713" : ""
-                font.pixelSize: 16
+                font.pixelSize: boxSize * 0.8
                 color: root.buttonColor
                 visible: checked
             }
@@ -83,9 +88,11 @@ Rectangle {
         Text {
             text: root.text
             color: root.textColor
-            font.pixelSize: root.fontSize
+            font.pixelSize: fontSize
             font.bold: true
             verticalAlignment: Text.AlignVCenter
+            Layout.preferredWidth: label.implicitWidth
+            id: label
         }
     }
 

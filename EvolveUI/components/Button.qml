@@ -13,20 +13,24 @@ Rectangle {
     signal clicked
 
     // === 样式属性 ===
-    property int fontSize: 16
-    property int iconSize: 20
     property real radius: 15
     property color buttonColor: theme.secondaryColor
     property color hoverColor: Qt.darker(buttonColor, 1.2)
     property color textColor: theme.textColor
     property bool shadowEnabled: true
     property real pressedScale: 0.96
-
-    // 使用 Theme 中的统一阴影属性
     property color shadowColor: theme.shadowColor
 
-    implicitWidth: layout.implicitWidth + 32
+    // === 内容尺寸自动计算 ===
+    readonly property real contentScale: 0.4
+    readonly property real iconSize: root.height * contentScale
+    readonly property real fontSize: iconSize * 0.9
+
+    // === 尺寸控制 ===
+    readonly property int horizontalPadding: 16
     implicitHeight: 52
+    implicitWidth: layout.implicitWidth + horizontalPadding * 2
+
     color: "transparent"
 
     transform: Scale {
@@ -40,7 +44,7 @@ Rectangle {
         source: background
         anchors.fill: background
         shadowEnabled: root.shadowEnabled
-        shadowColor: theme.shadowColor
+        shadowColor: root.shadowColor
         shadowBlur: theme.shadowBlur
         shadowHorizontalOffset: theme.shadowXOffset
         shadowVerticalOffset: theme.shadowYOffset
@@ -57,7 +61,7 @@ Rectangle {
         Behavior on opacity { NumberAnimation { duration: 100 } }
     }
 
-    // === 图标 + 文字布局 ===
+    // === 内容布局 ===
     RowLayout {
         id: layout
         anchors.centerIn: parent
@@ -70,10 +74,10 @@ Rectangle {
             color: root.textColor
             font.pixelSize: root.iconSize
             font.family: root.iconFontFamily
-            Layout.preferredWidth: root.iconSize
-            Layout.preferredHeight: root.iconSize
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
+            Layout.preferredWidth: iconLabel.implicitWidth
+            Layout.preferredHeight: iconSize
         }
 
         Text {
@@ -83,10 +87,12 @@ Rectangle {
             color: root.textColor
             font.pixelSize: root.fontSize
             font.bold: true
+            verticalAlignment: Text.AlignVCenter
+            Layout.preferredWidth: label.implicitWidth
         }
     }
 
-    // === 点击区域与交互动画 ===
+    // === 交互区域与动画 ===
     MouseArea {
         id: mouseArea
         anchors.fill: parent

@@ -1,168 +1,194 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
-import QtQuick.Controls 2.15 // 如果您的项目中使用了 QtQuick.Controls，虽然在这个特定组件中可能不是必需的，但通常会用到
-import QtQuick.Effects // 明确指定版本，虽然在导入部分已列出
+import QtQuick.Controls 2.15
+import QtQuick.Effects
 
 Rectangle {
     id: root
 
-    property var model: [] // 数组，{ text: string } 格式
-    property int selectedIndex: -1 // 当前选中项，-1表示无选中
+    // === 外部接口 ===
+    property var model: [] // [{ text: string }]
+    property int selectedIndex: -1
     signal selectedChanged(int selectedIndex, var selectedData)
 
+    // === 样式属性 ===
     property real radius: 15
     property int fontSize: 16
-    property color buttonColor: theme.secondaryColor // 确保 theme 对象可用
+    property color buttonColor: theme.secondaryColor
     property color hoverColor: Qt.darker(buttonColor, 1.2)
-    property color textColor: theme.textColor // 确保 theme 对象可用
-    property color checkmarkColor: theme.textColor // 确保 theme 对象可用
+    property color textColor: theme.textColor
+    property color checkmarkColor: theme.textColor
     property real pressedScale: 0.96
     property bool shadowEnabled: true
-    property color shadowColor: theme.shadowColor // 确保 theme 对象可用
+    property color shadowColor: theme.shadowColor
 
-    // 假设 theme 对象提供了这些阴影参数
-    // 例如：
-    // property real shadowBlur: 20
-    // property real shadowXOffset: 0
-    // property real shadowYOffset: 5
+    property int horizontalPadding: 24
+    property int boxSize: 24
+    property int spacingBetweenBoxAndText: 12
+    property int verticalSpacingBetweenButtons: 6
+    property int buttonHeight: 48
 
-    implicitWidth: 300
-    implicitHeight: model.length * 56 // 根据模型数据项的数量动态计算高度，每项约 56 像素
+    // 测量文本宽度用的隐藏Text
+    Text {
+        id: measureText
+        visible: false
+        font.pixelSize: root.fontSize
+        font.bold: false
+    }
+
+    // 通过函数计算最大文本宽度
+    property real maxTextWidth: 0
+    function updateMaxTextWidth() {
+        var maxWidth = 0;
+        for (var i = 0; i < model.length; i++) {
+            measureText.text = model[i].text;
+            var w = measureText.width;
+            if (w > maxWidth)
+                maxWidth = w;
+        }
+        maxTextWidth = maxWidth;
+    }
+
+    // 组件加载完和model变更时重新计算
+    Component.onCompleted: updateMaxTextWidth()
+    onModelChanged: updateMaxTextWidth()
+
+    // 根据最大文本宽度计算implicitWidth
+    implicitWidth: horizontalPadding * 2 + boxSize + spacingBetweenBoxAndText + maxTextWidth + 30
+
+    implicitHeight: model.length > 0 ? model.length * (buttonHeight + verticalSpacingBetweenButtons) - verticalSpacingBetweenButtons + 20 : buttonHeight + 20
+
+    width: implicitWidth
+    height: implicitHeight
+
     color: "transparent"
 
-    // 背景矩形，现在它负责渲染内容并应用层效果
     Rectangle {
         id: background
         anchors.fill: parent
-        clip: true // 裁剪内容以遵守圆角
+        clip: true
         radius: root.radius
-        color: root.buttonColor // 使用根组件的 buttonColor
+        color: root.buttonColor
 
-        // 只有在 shadowEnabled 为 true 时才启用层，以优化性能
         layer.enabled: root.shadowEnabled
-        // 将 MultiEffect 作为 layer 的效果应用
         layer.effect: MultiEffect {
-            shadowEnabled: root.shadowEnabled // 效果的 shadowEnabled 属性
-            shadowColor: root.shadowColor // 效果的 shadowColor 属性
-            // 确保 theme 对象有 shadowBlur, shadowXOffset, shadowYOffset 属性
+            shadowEnabled: root.shadowEnabled
+            shadowColor: root.shadowColor
             shadowBlur: theme.shadowBlur
             shadowHorizontalOffset: theme.shadowXOffset
             shadowVerticalOffset: theme.shadowYOffset
         }
     }
 
-    // 按钮列布局，与背景矩形重叠，但不需要自己的阴影
     ColumnLayout {
         id: buttonsColumn
-        anchors.fill: parent
-        anchors.margins: 10 // 内部边距
-        spacing: 6 // 各个按钮之间的间距
+        anchors.top: parent.top
+        anchors.topMargin: 10
+        anchors.horizontalCenter: parent.horizontalCenter  // 【居中关键】
+        spacing: verticalSpacingBetweenButtons
+        width: implicitWidth
+    }
 
-        Repeater {
-            model: root.model // 使用根组件的 model
+    Repeater {
+        model: root.model
+        parent: buttonsColumn
 
-            Rectangle {
-                id: btn
-                width: parent.width // 填充父级宽度
-                height: 48 // 固定高度
-                radius: root.radius * 0.5 // 按钮圆角为根组件圆角的一半
+        Rectangle {
+            id: btn
+            implicitWidth: horizontalPadding * 2 + boxSize + spacingBetweenBoxAndText + label.implicitWidth + 10
+            height: buttonHeight
+            radius: root.radius * 0.5
 
-                property bool hovered: false // 鼠标是否悬停
-                property bool checked: root.selectedIndex === index // 当前按钮是否被选中
+            property bool hovered: false
+            property bool checked: root.selectedIndex === index
 
-                // 颜色和边框根据状态变化
-                color: hovered ? root.hoverColor : root.buttonColor
-                border.color: checked ? root.checkmarkColor : "transparent"
-                border.width: 2
-                opacity: mouseArea.pressed ? 0.85 : 1.0 // 按下时半透明效果
+            color: hovered ? root.hoverColor : root.buttonColor
+            border.color: checked ? root.checkmarkColor : "transparent"
+            border.width: 2
+            opacity: mouseArea.pressed ? 0.85 : 1.0
 
-                // 动画效果
-                Behavior on color { ColorAnimation { duration: 150 } }
-                Behavior on border.color { ColorAnimation { duration: 150 } }
-                Behavior on opacity { NumberAnimation { duration: 100 } }
+            Behavior on color { ColorAnimation { duration: 150 } }
+            Behavior on border.color { ColorAnimation { duration: 150 } }
+            Behavior on opacity { NumberAnimation { duration: 100 } }
 
-                // 按下时的缩放效果
-                transform: Scale {
-                    id: scale
-                    origin.x: btn.width / 2
-                    origin.y: btn.height / 2
-                }
+            transform: Scale {
+                id: scale
+                origin.x: btn.width / 2
+                origin.y: btn.height / 2
+            }
 
-                // 释放鼠标或取消时的恢复动画
-                ParallelAnimation {
-                    id: restoreAnimation
-                    SpringAnimation { target: scale; property: "xScale"; to: 1.0; spring: 2.5; damping: 0.25 }
-                    SpringAnimation { target: scale; property: "yScale"; to: 1.0; spring: 2.5; damping: 0.25 }
-                }
+            ParallelAnimation {
+                id: restoreAnimation
+                SpringAnimation { target: scale; property: "xScale"; to: 1.0; spring: 2.5; damping: 0.25 }
+                SpringAnimation { target: scale; property: "yScale"; to: 1.0; spring: 2.5; damping: 0.25 }
+            }
 
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 15
-                    anchors.rightMargin: 15
-                    spacing: 12
-                    Layout.alignment: Qt.AlignVCenter // 垂直居中对齐
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: horizontalPadding
+                anchors.rightMargin: horizontalPadding
+                spacing: spacingBetweenBoxAndText
+                Layout.alignment: Qt.AlignVCenter
 
-                    // 复选框样式
-                    Rectangle {
-                        id: box
-                        width: 24
-                        height: 24
-                        radius: 6
-                        border.color: root.checkmarkColor
-                        border.width: 2
-                        color: checked ? root.checkmarkColor : "transparent" // 选中时填充颜色
-                        Behavior on color { ColorAnimation { duration: 150 } }
+                Rectangle {
+                    id: box
+                    width: boxSize
+                    height: boxSize
+                    radius: boxSize * 0.25
+                    border.color: root.checkmarkColor
+                    border.width: 2
+                    color: checked ? root.checkmarkColor : "transparent"
+                    Behavior on color { ColorAnimation { duration: 150 } }
 
-                        Text {
-                            anchors.centerIn: parent
-                            visible: checked // 仅在选中时显示勾号
-                            text: "\u2713" // 勾号 Unicode 字符
-                            font.pixelSize: 16
-                            color: root.buttonColor // 勾号颜色与按钮背景色相同
-                        }
-                    }
-
-                    // 文本内容
                     Text {
-                        text: modelData.text // 显示模型数据中的文本
-                        color: root.textColor
-                        font.pixelSize: root.fontSize
-                        font.bold: checked // 选中时加粗
-                        elide: Text.ElideRight // 文本过长时显示省略号
-                        Layout.fillWidth: true // 填充剩余宽度
-                        Layout.alignment: Qt.AlignVCenter
+                        anchors.centerIn: parent
+                        visible: checked
+                        text: "\u2713"
+                        font.pixelSize: 16
+                        color: root.buttonColor
                     }
                 }
 
-                MouseArea {
-                    id: mouseArea
-                    anchors.fill: parent
-                    hoverEnabled: true // 启用悬停事件
-                    cursorShape: Qt.PointingHandCursor // 鼠标悬停时显示手型光标
+                Text {
+                    id: label
+                    text: modelData.text
+                    color: root.textColor
+                    font.pixelSize: root.fontSize
+                    font.bold: checked
+                    elide: Text.ElideRight
+                    Layout.preferredWidth: label.implicitWidth
+                    Layout.alignment: Qt.AlignVCenter
+                }
+            }
 
-                    onEntered: btn.hovered = true // 鼠标进入时设置悬停状态
-                    onExited: btn.hovered = false // 鼠标离开时取消悬停状态
+            MouseArea {
+                id: mouseArea
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
 
-                    onPressed: {
-                        scale.xScale = root.pressedScale // 按下时缩放
-                        scale.yScale = root.pressedScale
-                        btn.opacity = 0.85 // 按下时降低不透明度
+                onEntered: btn.hovered = true
+                onExited: btn.hovered = false
+
+                onPressed: {
+                    scale.xScale = root.pressedScale
+                    scale.yScale = root.pressedScale
+                    btn.opacity = 0.85
+                }
+
+                onReleased: {
+                    restoreAnimation.restart()
+                    btn.opacity = 1.0
+
+                    if (root.selectedIndex !== index) {
+                        root.selectedIndex = index
+                        root.selectedChanged(index, modelData)
                     }
+                }
 
-                    onReleased: {
-                        restoreAnimation.restart() // 释放时恢复动画
-                        btn.opacity = 1.0 // 恢复不透明度
-
-                        if (root.selectedIndex !== index) {
-                            root.selectedIndex = index // 更新选中项
-                            root.selectedChanged(index, modelData) // 发出选中改变信号
-                        }
-                    }
-
-                    onCanceled: { // 鼠标操作取消时（例如拖拽出区域）
-                        restoreAnimation.restart()
-                        btn.opacity = 1.0
-                    }
+                onCanceled: {
+                    restoreAnimation.restart()
+                    btn.opacity = 1.0
                 }
             }
         }
