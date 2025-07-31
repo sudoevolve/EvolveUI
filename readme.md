@@ -1,5 +1,3 @@
-
-```markdown
 # EvolveUI - Modern QML 组件库
 
 ![EvolveUI Demo](./gif.gif)
@@ -45,9 +43,8 @@ EvolveUI/
 │ ├── ShadowInput.qml  
 │ ├── HoverCard.qml  
 │ ├── Switch.qml  
-│ ├── ...  
-│  
-├── Theme.qml # 全局样式与颜色定义  
+│ ├── Theme.qml # 全局样式与颜色定义
+│    
 ├── main.qml # 示例用法  
 
 ````
@@ -131,7 +128,3 @@ Button {
 
 欢迎 star 🌟、fork 🍴、提 issue 💬、提 PR 🔧！
 
-```
-
-如果你希望我根据你当前项目结构自动生成文件树或添加 live demo 演示项目入口，也可以告诉我。
-```
