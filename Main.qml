@@ -84,7 +84,7 @@ ApplicationWindow {
         width: 240
         height: parent.height
         sourceItem: background
-        blurRadius: 35
+        blurRadius: 60
         borderRadius: 25
         anchors.top: parent.top
         anchors.left: parent.left
@@ -133,7 +133,7 @@ ApplicationWindow {
         x: 260 - flickable.contentX  // 关键：x位置减去滚动偏移
         y: 600 - flickable.contentY      // y方向同理
         z: 0
-        blurRadius:35
+        blurRadius:60
         borderRadius: 25
 
     }
