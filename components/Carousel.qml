@@ -1,4 +1,4 @@
-// BingImageCarousel.qml
+// BingImageCarouselOptimized.qml
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -9,13 +9,13 @@ Item {
     id: root
 
     // ==== 公共/样式属性 ====
-    readonly property Theme theme: Theme {}       // 主题对象
-    property real radius: 15                       // 背景圆角
-    property bool shadowEnabled: true              // 是否显示阴影
+    readonly property Theme theme: Theme {}
+    property real radius: 15
+    property bool shadowEnabled: true
 
     // ==== 数据模型 ====
-    property var model: []                          // 图片 URL 数组
-    property alias currentIndex: swipeView.currentIndex  // 当前显示索引
+    property var model: []
+    property alias currentIndex: swipeView.currentIndex
 
     // ==== 尺寸/布局 ====
     implicitWidth: 400
@@ -47,6 +47,7 @@ Item {
             anchors.fill: parent
             interactive: model.length > 1
 
+            // 强制圆角
             layer.enabled: true
             layer.effect: OpacityMask {
                 maskSource: Item {
@@ -62,11 +63,37 @@ Item {
             // ==== 图片重复显示 ====
             Repeater {
                 model: root.model
-                delegate: Image {
+                delegate: Item {
                     width: swipeView.width
                     height: swipeView.height
-                    source: modelData
-                    fillMode: Image.PreserveAspectCrop
+
+                    Image {
+                        id: img
+                        anchors.fill: parent
+                        fillMode: Image.PreserveAspectCrop
+                        cache: true
+                        asynchronous: true
+
+                        // 使用组件大小优化加载
+                        property int targetWidth: Math.round(swipeView.width)
+                        property int targetHeight: Math.round(swipeView.height)
+
+                        property string optimizedSource: {
+                            var src = modelData
+                            if (src.indexOf("?") === -1)
+                                return src + "?w=" + targetWidth + "&h=" + targetHeight
+                            else
+                                return src + "&w=" + targetWidth + "&h=" + targetHeight
+                        }
+
+                        source: optimizedSource
+
+                        Rectangle {
+                            anchors.fill: parent
+                            color: "#333"
+                            visible: img.status !== Image.Ready
+                        }
+                    }
                 }
             }
         }
@@ -76,20 +103,8 @@ Item {
             anchors.bottom: parent.bottom
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottomMargin: 15
-
             count: swipeView.count
             currentIndex: swipeView.currentIndex
-
-            // 鼠标悬停时显示
-            opacity: hoverArea.containsMouse ? 1 : 0
-            Behavior on opacity {
-                OpacityAnimator {
-                    duration: 300
-                    easing.type: Easing.InOutQuad
-                }
-            }
-
-            // ==== 页码点样式 ====
             delegate: Rectangle {
                 height: 8
                 width: index === currentIndex ? 24 : 8
@@ -103,17 +118,6 @@ Item {
                     }
                 }
             }
-        }
-
-        // ==== 鼠标悬停捕获区 ====
-        MouseArea {
-            id: hoverArea
-            anchors.fill: parent
-            hoverEnabled: true
-
-            onPressed: function(mouse) { mouse.accepted = false }
-            onPositionChanged: function(mouse) { mouse.accepted = false }
-            onReleased: function(mouse) { mouse.accepted = false }
         }
     }
 
@@ -129,8 +133,6 @@ Item {
             if (xhr.readyState === XMLHttpRequest.DONE) {
                 if (xhr.status === 200) {
                     var response = JSON.parse(xhr.responseText)
-                    console.log("Images count: " + response.images.length)
-                    console.log(JSON.stringify(response.images))
                     var images = response.images
                     var urls = []
                     for (var i = 0; i < images.length; i++) {
