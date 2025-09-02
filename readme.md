@@ -118,3 +118,6 @@ Button {
 
 欢迎 star 🌟、fork 🍴、提 issue 💬、提 PR 🔧！
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=sudoevolve/EvolveUI&type=Date)](https://www.star-history.com/#sudoevolve/EvolveUI&Date)
