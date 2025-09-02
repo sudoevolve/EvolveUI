@@ -1,4 +1,3 @@
-//此页面为组件示例
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -84,7 +83,7 @@ ApplicationWindow {
         width: 240
         height: parent.height
         sourceItem: background
-        blurRadius: 60
+        blurRadius: 35
         borderRadius: 25
         anchors.top: parent.top
         anchors.left: parent.left
@@ -133,7 +132,7 @@ ApplicationWindow {
         x: 260 - flickable.contentX  // 关键：x位置减去滚动偏移
         y: 600 - flickable.contentY      // y方向同理
         z: 0
-        blurRadius:60
+        blurRadius:35
         borderRadius: 25
 
     }
@@ -144,7 +143,7 @@ ApplicationWindow {
             id: flickable
             anchors.fill: parent
             anchors.topMargin: 0
-            anchors.leftMargin: 260  // 和上方 BlurCard 保持间距
+            anchors.leftMargin: 260  // 和左边 BlurCard 保持间距
             anchors.rightMargin: 40
             clip: true
             contentWidth: flowContent.implicitWidth
@@ -157,7 +156,9 @@ ApplicationWindow {
             spacing: 16
             anchors.top: parent.top
             anchors.left: parent.left
-            anchors.margins: 20  // 上下左右统一留白
+            anchors.right: parent.right
+            anchors.leftMargin: 24
+            anchors.rightMargin: 24
 
             Rectangle {
                     width: flowContent.width
@@ -321,7 +322,7 @@ ApplicationWindow {
                 }
 
             Components.Accordion {
-                        width: 660
+                        width: 650
                         title: "用户协议"
 
                         // 直接把你的组件放在这里ColumnLayout来自动排列
