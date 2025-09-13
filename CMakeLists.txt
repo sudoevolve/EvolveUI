@@ -48,6 +48,7 @@ qt_add_qml_module(appEvolveUI
         components/Carousel.qml
         components/Clock.qml
         components/CardWithTextArea.qml
+        QML_FILES components/DataTable.qml
 )
 
 # ==========================

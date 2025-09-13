@@ -1,5 +1,6 @@
 # EvolveUI - Modern QML 组件库
 
+![EvolveUI Demo](./1.png)
 ![EvolveUI Demo](./gif.gif)
 
 EvolveUI 是一个现代化、高度风格统一的 Qt6 QML 前端组件库，致力于为跨平台应用程序提供一致、优雅、响应式的 UI 体验。灵感来源于 Telegram 动效、Material Design 规范，并充分考虑了桌面与移动端的交互习惯。
@@ -30,6 +31,7 @@ EvolveUI 是一个现代化、高度风格统一的 Qt6 QML 前端组件库，�
 | `Carousel.qml`        | 轮播组件                                |
 | `CheckBox.qml`        | 动画复选框组件                          |
 | `Clock.qml`           | 时钟显示组件                            |
+| `DataTable.qml`       | 高性能表格组件                           |
 | `HoverCard.qml`       | 鼠标悬停浮起卡片容器组件                |
 | `Input.qml`           | 支持焦点变色与阴影的输入框              |
 | `List.qml`            | 列表展示组件                            |
@@ -118,3 +120,6 @@ Button {
 
 欢迎 star 🌟、fork 🍴、提 issue 💬、提 PR 🔧！
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=sudoevolve/EvolveUI&type=Date)](https://www.star-history.com/#sudoevolve/EvolveUI&Date)
