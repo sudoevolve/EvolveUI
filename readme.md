@@ -33,6 +33,8 @@ EvolveUI 是一个现代化、高度风格统一的 Qt6 QML 前端组件库，�
 | `ECheckBox.qml`        | 动画复选框组件                          |
 | `EClock.qml`           | 时钟显示组件                            |
 | `EDataTable.qml`       | 高性能表格组件                           |
+| `EDrawer.qml`          | 侧边栏组件                           |
+| `EDropdown.qml`        | 下拉选择框组件                           |
 | `EHoverCard.qml`       | 鼠标悬停浮起卡片容器组件                |
 | `EInput.qml`           | 支持焦点变色与阴影的输入框              |
 | `EList.qml`            | 列表展示组件                            |
