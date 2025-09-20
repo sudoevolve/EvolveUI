@@ -4,12 +4,11 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import QtQuick.Effects
 
-Rectangle {
+Item {
     id: root
 
     width: 200
     height: 230
-    color: "transparent"
     clip: false
 
     // === 接口属性 & 信号 ===
@@ -30,7 +29,7 @@ Rectangle {
     property bool shadowEnabled: true
     property color shadowColor: theme.shadowColor
 
-    // === 背景与阴影（核心裁剪容器）===
+    // === 背景===
     Rectangle {
         id: background
         anchors.fill: parent
@@ -46,107 +45,106 @@ Rectangle {
             shadowHorizontalOffset: theme.shadowXOffset
             shadowVerticalOffset: theme.shadowYOffset
         }
+    }
 
-        // === 列表布局（在背景内裁剪，保证圆角一致）===
-        ListView {
-            id: listView
-            anchors.fill: parent
-            anchors.margins: root.listPadding
-            spacing: root.listPadding
-            model: root.model
-            clip: true
+    // === 列表内容===
+    ListView {
+        id: listView
+        anchors.fill: parent
+        anchors.margins: root.listPadding
+        spacing: root.listPadding
+        model: root.model
+        clip: true
 
-            // === 列表项委托 ===
-            delegate: Rectangle {
-                id: itemContainer
-                width: listView.width
-                height: root.itemHeight
-                radius: root.radius * 0.5
+        delegate: Rectangle {
+            id: itemContainer
+            width: listView.width
+            height: root.itemHeight
+            radius: root.radius * 0.5
 
-                // === 状态属性 ===
-                property bool hovered: false
+            // === 状态属性 ===
+            property bool hovered: false
 
-                color: root.backgroundVisible
-                    ? (hovered ? root.hoverColor : root.buttonColor)
-                    : "transparent"
+            color: root.backgroundVisible
+                ? (hovered ? root.hoverColor : root.buttonColor)
+                : "transparent"
 
-                opacity: mouseArea.pressed ? 0.85 : 1.0
+            opacity: mouseArea.pressed ? 0.85 : 1.0
 
-                // === 颜色动画 ===
-                Behavior on color { ColorAnimation { duration: 150 } }
-                Behavior on opacity { NumberAnimation { duration: 100 } }
+            // === 颜色与透明度动画 ===
+            Behavior on color { ColorAnimation { duration: 150 } }
+            Behavior on opacity { NumberAnimation { duration: 100 } }
 
-                // === 缩放动画 ===
-                transform: Scale {
-                    id: scale
-                    origin.x: itemContainer.width / 2
-                    origin.y: itemContainer.height / 2
+            // === 缩放动画 ===
+            transform: Scale {
+                id: scale
+                origin.x: itemContainer.width / 2
+                origin.y: itemContainer.height / 2
+            }
+
+            ParallelAnimation {
+                id: restoreAnimation
+                SpringAnimation { target: scale; property: "xScale"; to: 1.0; spring: 2.5; damping: 0.25 }
+                SpringAnimation { target: scale; property: "yScale"; to: 1.0; spring: 2.5; damping: 0.25 }
+            }
+
+            // === 内容布局 ===
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: root.listPadding
+                anchors.rightMargin: root.listPadding
+                spacing: 12
+                Layout.alignment: Qt.AlignVCenter
+
+                // 图标
+                Text {
+                    text: model.iconChar
+                    visible: model.iconChar !== undefined
+                    font.family: iconFont.name
+                    font.pixelSize: root.itemIconSize
+                    color: root.textColor
+                    Layout.preferredWidth: root.itemIconSize
+                    Layout.preferredHeight: root.itemIconSize
+                    verticalAlignment: Text.AlignVCenter
+                    horizontalAlignment: Text.AlignHCenter
                 }
 
-                ParallelAnimation {
-                    id: restoreAnimation
-                    SpringAnimation { target: scale; property: "xScale"; to: 1.0; spring: 2.5; damping: 0.25 }
-                    SpringAnimation { target: scale; property: "yScale"; to: 1.0; spring: 2.5; damping: 0.25 }
+                // 显示文本
+                Text {
+                    text: model.display
+                    color: root.textColor
+                    font.pixelSize: root.itemFontSize
+                    elide: Text.ElideRight
+                    Layout.fillWidth: true
+                    verticalAlignment: Text.AlignVCenter
+                }
+            }
+
+            // === 交互事件 ===
+            MouseArea {
+                id: mouseArea
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+
+                onEntered: itemContainer.hovered = true
+                onExited: itemContainer.hovered = false
+
+                onPressed: {
+                    scale.xScale = root.pressedScale
+                    scale.yScale = root.pressedScale
+                    itemContainer.opacity = 0.85
                 }
 
-                // === 内容布局 ===
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: root.listPadding
-                    anchors.rightMargin: root.listPadding
-                    spacing: 12
-                    Layout.alignment: Qt.AlignVCenter
-
-                    // 图标
-                    Text {
-                        text: model.iconChar
-                        visible: model.iconChar !== undefined
-                        font.family: iconFont.name
-                        font.pixelSize: root.itemIconSize
-                        color: root.textColor
-                        Layout.preferredWidth: root.itemIconSize
-                        Layout.preferredHeight: root.itemIconSize
-                        verticalAlignment: Text.AlignVCenter
-                        horizontalAlignment: Text.AlignHCenter
-                    }
-
-                    // 显示文本
-                    Text {
-                        text: model.display
-                        color: root.textColor
-                        font.pixelSize: root.itemFontSize
-                        elide: Text.ElideRight
-                        Layout.fillWidth: true
-                        verticalAlignment: Text.AlignVCenter
-                    }
+                onReleased: {
+                    restoreAnimation.restart()
+                    itemContainer.opacity = 1.0
+                    root.itemClicked(index, { display: model.display, iconChar: model.iconChar })
                 }
 
-                // === 交互事件 ===
-                MouseArea {
-                    id: mouseArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-
-                    onEntered: itemContainer.hovered = true
-                    onExited: itemContainer.hovered = false
-
-                    onPressed: {
-                        scale.xScale = root.pressedScale
-                        scale.yScale = root.pressedScale
-                        itemContainer.opacity = 0.85
-                    }
-
-                    onReleased: {
-                        restoreAnimation.restart()
-                        itemContainer.opacity = 1.0
-                        root.itemClicked(index, { display: model.display, iconChar: model.iconChar })
-                    }
-
-                    onCanceled: {
-                        restoreAnimation.restart()
-                        itemContainer.opacity = 1.0
-                    }
+                onCanceled: {
+                    restoreAnimation.restart()
+                    itemContainer.opacity = 1.0
                 }
             }
         }

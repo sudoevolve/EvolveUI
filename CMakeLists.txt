@@ -48,11 +48,11 @@ qt_add_qml_module(appEvolveUI
         components/ECarousel.qml
         components/EClock.qml
         components/ECardWithTextArea.qml
-        components/EDataTable.qml
-        components/EAnimatedWindow.qml
-        components/Aboutme.qml
-        components/EDrawer.qml
-        components/EDropdown.qml
+        QML_FILES components/EDataTable.qml
+        QML_FILES components/EAnimatedWindow.qml
+        QML_FILES components/Aboutme.qml
+        QML_FILES components/EDrawer.qml
+        QML_FILES components/EDropdown.qml
 )
 
 # ==========================
