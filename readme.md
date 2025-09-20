@@ -1,7 +1,6 @@
 # EvolveUI - Modern QML 组件库
 
 ![EvolveUI Demo](./1.png)
-![EvolveUI Demo](./gif.gif)
 
 EvolveUI 是一个现代化、高度风格统一的 Qt6 QML 前端组件库，致力于为跨平台应用程序提供一致、优雅、响应式的 UI 体验。灵感来源于 Telegram 动效、Material Design 规范，并充分考虑了桌面与移动端的交互习惯。
 
@@ -21,26 +20,28 @@ EvolveUI 是一个现代化、高度风格统一的 Qt6 QML 前端组件库，�
 
 | 组件名                | 描述                                   |
 |-----------------------|----------------------------------------|
-| `Accordion.qml`       | 下拉信息栏                              |
-| `Avatar.qml`          | 头像组件                                |
-| `BlurCard.qml`        | 高斯模糊卡片组件                        |
-| `Button.qml`          | 带图标 + 动画的圆角按钮组件            |
-| `Calendar.qml`        | 日历组件                                |
-| `Card.qml`            | 基础卡片容器组件                        |
-| `CardWithTextArea.qml`| 带文本区域的卡片容器组件                |
-| `Carousel.qml`        | 轮播组件                                |
-| `CheckBox.qml`        | 动画复选框组件                          |
-| `Clock.qml`           | 时钟显示组件                            |
-| `DataTable.qml`       | 高性能表格组件                           |
-| `HoverCard.qml`       | 鼠标悬停浮起卡片容器组件                |
-| `Input.qml`           | 支持焦点变色与阴影的输入框              |
-| `List.qml`            | 列表展示组件                            |
-| `NavBar.qml`          | 导航栏组件                              |
-| `RadioButton.qml`     | 动画单选组件                            |
-| `Slider.qml`          | 支持滑块动画的调节组件                  |
-| `SwitchButton.qml`    | 动画开关组件                            |
-| `Theme.qml`           | 全局样式与颜色定义                      |
-| `TimeDisplay.qml`     | 时间显示组件                            |
+| `Aboutme.qml`          | 带有打字机效果的介绍界面                |
+| `EAccordion.qml`       | 下拉信息栏                             |
+| `EAnimatedWindow.qml`  | iPad os动画风格窗口组件                 |
+| `EAvatar.qml`          | 头像组件                               |
+| `EBlurCard.qml`        | 高斯模糊卡片组件                        |
+| `EButton.qml`          | 带图标 + 动画的圆角按钮组件              |
+| `ECalendar.qml`        | 日历组件                                |
+| `ECard.qml`            | 基础卡片容器组件                        |
+| `ECardWithTextArea.qml`| 带文本区域的卡片容器组件                |
+| `ECarousel.qml`        | 轮播组件                                |
+| `ECheckBox.qml`        | 动画复选框组件                          |
+| `EClock.qml`           | 时钟显示组件                            |
+| `EDataTable.qml`       | 高性能表格组件                           |
+| `EHoverCard.qml`       | 鼠标悬停浮起卡片容器组件                |
+| `EInput.qml`           | 支持焦点变色与阴影的输入框              |
+| `EList.qml`            | 列表展示组件                            |
+| `ENavBar.qml`          | 导航栏组件                              |
+| `ERadioButton.qml`     | 动画单选组件                            |
+| `ESlider.qml`          | 支持滑块动画的调节组件                  |
+| `ESwitchButton.qml`    | 动画开关组件                            |
+| `ETheme.qml`           | 全局样式与颜色定义                      |
+| `ETimeDisplay.qml`     | 时间显示组件                            |
 
 
 ## ♻️ 如何复用组件
