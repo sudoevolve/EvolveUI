@@ -1,3 +1,4 @@
+//EAccordion.qml
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Effects
@@ -13,7 +14,7 @@ ColumnLayout {
     default property alias content: contentLayout.data  // 默认内容插槽
 
     // ==== 样式 ====
-    property real radius: 15
+    property real radius: 20
     property color headerColor: theme.secondaryColor
     property color headerHoverColor: Qt.darker(headerColor, 1.1)
     property color textColor: theme.textColor

@@ -1,4 +1,4 @@
-// Theme.qml
+// ETheme.qml
 import QtQuick 2.15
 
 QtObject {
@@ -20,7 +20,7 @@ QtObject {
     property int shadowXOffset: 2
     property int shadowYOffset: 2
 
-    // === 背景图片（新增）===
+    // === 背景图片===
     property url backgroundImage: isDark ? "qrc:/new/prefix1/fonts/pic/02.jpg" : "qrc:/new/prefix1/fonts/pic/01.jpg"
 
     // === 方法 ===

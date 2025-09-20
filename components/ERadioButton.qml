@@ -1,4 +1,4 @@
-// RadioButton.qml
+// ERadioButton.qml
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
@@ -14,7 +14,7 @@ Rectangle {
 
     // === 样式属性 ===
     property bool backgroundVisible: true
-    property real radius: 15
+    property real radius: 20
     property int fontSize: 16
     property color buttonColor: theme.secondaryColor
     property color hoverColor: Qt.darker(buttonColor, 1.2)

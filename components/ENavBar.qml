@@ -1,4 +1,4 @@
-// NavBar.qml
+// ENavBar.qml
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
@@ -13,7 +13,7 @@ Rectangle {
     signal itemClicked(int index, var modelData)
 
     // === 样式属性 ===
-    property real radius: 15
+    property real radius: 20
     property int itemHeight: 50
     property int itemFontSize: 15
     property int itemIconSize: 20

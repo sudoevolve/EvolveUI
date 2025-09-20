@@ -1,4 +1,4 @@
-// BingImageCarouselOptimized.qml
+// ECarousel.qml
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -9,8 +9,7 @@ Item {
     id: root
 
     // ==== 公共/样式属性 ====
-    readonly property Theme theme: Theme {}
-    property real radius: 15
+    property real radius: 20
     property bool shadowEnabled: true
 
     // ==== 数据模型 ====

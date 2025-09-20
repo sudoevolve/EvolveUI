@@ -1,4 +1,4 @@
-//Avatar.qml
+//EAvatar.qml
 import QtQuick 6.2
 import QtQuick.Controls
 import QtQuick.Effects

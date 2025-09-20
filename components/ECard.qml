@@ -1,4 +1,4 @@
-//Card.qml
+//ECard.qml
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Effects
@@ -10,7 +10,7 @@ Item {
     property bool backgroundVisible: true
 
     property color cardColor: theme.secondaryColor
-    property real radius: 15
+    property real radius: 20
     property int padding: 15 // 内容区域的内边距
 
     // 阴影属性

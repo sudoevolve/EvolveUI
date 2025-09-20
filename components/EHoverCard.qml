@@ -1,4 +1,4 @@
-// HoverCard.qml
+// EHoverCard.qml
 import QtQuick
 import QtQuick.Layouts
 
@@ -8,7 +8,7 @@ Item {
     height: 230
 
     // === 外部接口 ===
-    property real maxRotationAngle: 15       // 最大旋转角度
+    property real maxRotationAngle: 20       // 最大旋转角度
     property real rotationX: 0               // 当前 X 旋转角度
     property real rotationY: 0               // 当前 Y 旋转角度
     property bool isHovered: mouseArea.containsMouse

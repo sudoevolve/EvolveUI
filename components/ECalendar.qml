@@ -1,4 +1,4 @@
-// Calendar.qml
+// ECalendar.qml
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Effects
@@ -8,7 +8,7 @@ Item {
 
     // ==== 外部接口 ====
     property bool backgroundVisible: true           // 是否显示背景
-    property real radius: 15                        // 背景圆角
+    property real radius: 20                        // 背景圆角
     property int padding: 15                        // 内边距
     property bool shadowEnabled: true               // 是否显示阴影
 

@@ -1,4 +1,4 @@
-// InputField.qml
+// EInput.qml
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts

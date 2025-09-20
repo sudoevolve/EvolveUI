@@ -1,4 +1,4 @@
-// CardWithTextArea.qml
+// ECardWithTextArea.qml
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
@@ -10,7 +10,7 @@ Item {
     // === 公共接口与样式 ===
     property bool backgroundVisible: true
     property color cardColor: theme.secondaryColor
-    property real radius: 15
+    property real radius: 20
     property int padding: 15 // 内容区域内边距
 
     // 阴影属性

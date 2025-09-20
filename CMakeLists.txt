@@ -29,26 +29,28 @@ qt_add_qml_module(appEvolveUI
     VERSION 1.0
     QML_FILES
         Main.qml
-        components/Button.qml
-        components/Input.qml
-        components/List.qml
-        components/HoverCard.qml
-        components/Theme.qml
-        components/SwitchButton.qml
-        components/CheckBox.qml
-        components/RadioButton.qml
-        components/Slider.qml
-        components/BlurCard.qml
-        components/NavBar.qml
-        components/TimeDisplay.qml
-        components/Avatar.qml
-        components/Accordion.qml
-        components/Card.qml
-        components/Calendar.qml
-        components/Carousel.qml
-        components/Clock.qml
-        components/CardWithTextArea.qml
-        QML_FILES components/DataTable.qml
+        components/EButton.qml
+        components/EInput.qml
+        components/EList.qml
+        components/EHoverCard.qml
+        components/ETheme.qml
+        components/ESwitchButton.qml
+        components/ECheckBox.qml
+        components/ERadioButton.qml
+        components/ESlider.qml
+        components/EBlurCard.qml
+        components/ENavBar.qml
+        components/ETimeDisplay.qml
+        components/EAvatar.qml
+        components/EAccordion.qml
+        components/ECard.qml
+        components/ECalendar.qml
+        components/ECarousel.qml
+        components/EClock.qml
+        components/ECardWithTextArea.qml
+        QML_FILES components/EDataTable.qml
+        QML_FILES components/EAnimatedWindow.qml
+        QML_FILES components/Aboutme.qml
 )
 
 # ==========================

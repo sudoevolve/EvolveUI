@@ -1,4 +1,4 @@
-// SwitchButton.qml
+// ESwitchButton.qml
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Effects
@@ -13,7 +13,7 @@ Rectangle {
 
     // === 样式属性 ===
     property bool backgroundVisible: true
-    property real radius: 15
+    property real radius: 20
     readonly property real contentScale: 0.4
     readonly property real trackWidth: root.height * 1
     readonly property real trackHeight: root.height * contentScale

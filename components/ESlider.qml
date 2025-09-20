@@ -1,4 +1,4 @@
-// Slider.qml
+// ESlider.qml
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -29,7 +29,7 @@ Rectangle {
     property bool hovered: false
 
     color: "transparent"
-    width: 300
+    width: 320
     height: 40
 
     // === 功能方法 ===
@@ -74,7 +74,7 @@ Rectangle {
     Row {
         id: layoutRow
         anchors.fill: parent
-        anchors.margins: 8
+        anchors.margins: 10
         spacing: 10
 
         // 文本标签
@@ -111,7 +111,7 @@ Rectangle {
                 width: 24
                 height: 24
                 radius: width / 2
-                color: handleColor
+                color: root.handleColor
                 border.color: Qt.lighter(handleColor, 1.2)
                 border.width: 1
                 anchors.verticalCenter: parent.verticalCenter

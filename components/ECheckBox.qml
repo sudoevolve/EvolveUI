@@ -1,4 +1,4 @@
-// CheckBox.qml
+// ECheckBox.qml
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
@@ -14,7 +14,7 @@ Rectangle {
 
     // ==== 样式控制属性 ====
     property bool backgroundVisible: true       // 背景是否显示
-    property real radius: 15                    // 圆角半径
+    property real radius: 20                    // 圆角半径
     property int fontSize: 16                   // 文本字体大小
     property color buttonColor: theme.secondaryColor // 按钮颜色
     property color hoverColor: Qt.darker(buttonColor, 1.2) // 悬浮颜色

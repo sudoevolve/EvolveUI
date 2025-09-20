@@ -1,4 +1,4 @@
-// Clock.qml
+// EClock.qml
 import QtQuick
 
 Item {

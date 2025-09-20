@@ -17,7 +17,7 @@ ApplicationWindow {
         source: "qrc:/new/prefix1/fonts/fontawesome-free-6.7.2-desktop/otfs/Font Awesome 6 Free-Solid-900.otf"
     }
 
-    Components.Theme {
+    Components.ETheme {
         id: theme
     }
 
@@ -79,12 +79,11 @@ ApplicationWindow {
 
 
     // 左侧侧边栏毛玻璃卡片
-    Components.BlurCard {
+    Components.EBlurCard {
         width: 240
         height: parent.height
-        sourceItem: background
-        blurRadius: 35
-        borderRadius: 25
+        blurSource: background
+        borderRadius: 35
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.bottom: parent.bottom
@@ -94,16 +93,26 @@ ApplicationWindow {
 
 
     //头像
-    Components.Avatar {
+    Components.EAvatar {
+        id:avatar
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.topMargin: 40
         anchors.leftMargin: 60
         avatarSource: "qrc:/new/prefix1/fonts/pic/avatar.png"
+        MouseArea {
+            anchors.fill: parent
+            onPressed: parent.scale = 0.95
+            onReleased: parent.scale = 1.0
+            onCanceled: parent.scale = 1.0
+            onClicked: {
+                animationWrapper1.open(avatar)
+            }
         }
+    }
 
     //时间
-    Components.TimeDisplay {
+    Components.ETimeDisplay {
         is24Hour: true
         anchors.top: parent.top
         anchors.left: parent.left
@@ -111,7 +120,7 @@ ApplicationWindow {
         anchors.leftMargin: 50
     }
 
-    Components.Button {
+    Components.EButton {
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.bottomMargin: 100
@@ -120,20 +129,20 @@ ApplicationWindow {
         text: theme.isDark ? "切换为日间模式" : "切换为夜间模式"
         iconCharacter: theme.isDark ? "\uf186" : "\uf185"
         iconFontFamily: iconFont.name
+        iconRotateOnClick: true
         onClicked: theme.toggleTheme()
     }
 
-    Components.BlurCard {
+    Components.EBlurCard {
         id: blurCard
         width: flickable.width
         height: flowContent.height + 40
-        sourceItem: background
+        blurSource: background
 
         x: 260 - flickable.contentX  // 关键：x位置减去滚动偏移
         y: 600 - flickable.contentY      // y方向同理
         z: 0
-        blurRadius:35
-        borderRadius: 25
+        borderRadius: 35
 
     }
 
@@ -196,31 +205,37 @@ ApplicationWindow {
                     }
                 }
 
-            Components.Button {
+            Components.EButton {
                 text: theme.isDark ? "切换为日间模式" : "切换为夜间模式"
                 iconCharacter: theme.isDark ? "\uf186" : "\uf185"
                 iconFontFamily: iconFont.name
+                iconRotateOnClick: true //图标旋转
                 onClicked: theme.toggleTheme()
             }
 
-            Components.Button {
+            Components.EButton {
+                id:home
                 iconCharacter: "\uf015" // 设置图标字符，这里使用 FontAwesome 中的“主页”图标 Unicode 编码
                 iconFontFamily: iconFont.name  // 设置图标字体族名称，直接引用 main.qml 中 FontLoader 组件的 name 属性，确保字体正确
                 text: "主页"
+                onClicked: {
+                    animationWrapper2.open(home)
+                }
             }
 
-            Components.Button {
+            Components.EButton {
                 iconCharacter: "\uf013"
                 iconFontFamily: iconFont.name
+                iconRotateOnClick: true
                 text: ""
             }
 
-            Components.Button {
+            Components.EButton {
                 text: "返回"
                 iconCharacter: ""
             }
 
-            Components.SwitchButton {
+            Components.ESwitchButton {
                 text: "高级模式"
                 onToggled: console.log("开关状态:", checked)
             }
@@ -239,27 +254,27 @@ ApplicationWindow {
                     }
                 }
 
-            Components.Slider {
-                width: 270
+            Components.ESlider {
+                width: 280
                 text: "音量"
                 value: 30
                 onUserValueChanged: console.log("当前值：", value)
             }
 
 
-            Components.Input {
+            Components.EInput {
                 width: 200
                 placeholderText: "输入框 1"
                 passwordField: false
             }
 
-            Components.Input {
+            Components.EInput {
                 width: 200
                 placeholderText: "输入框 2"
                 passwordField: true
             }
 
-            Components.NavBar {
+            Components.ENavBar {
                 model: [
                     { display: "主页", iconChar: "\uf015" },
                     { display: "搜索", iconChar: "\uf002" },
@@ -275,7 +290,7 @@ ApplicationWindow {
                     // 分割占位
                 }
 
-            Components.CheckBox {
+            Components.ECheckBox {
                 model: [
                         { text: "选项 A" },
                         { text: "选项 B" },
@@ -289,7 +304,7 @@ ApplicationWindow {
                     }
             }
 
-            Components.RadioButton {
+            Components.ERadioButton {
                 model: [
                         { text: "男" },
                         { text: "女" },
@@ -303,7 +318,7 @@ ApplicationWindow {
                     }
             }
 
-            Components.List {
+            Components.EList {
                 radius: 15
                 width: 200
                 height: 230
@@ -332,7 +347,7 @@ ApplicationWindow {
                     }
                 }
 
-            Components.Card{
+            Components.ECard{
                 ColumnLayout {
                                spacing: 5
                                Layout.alignment: Qt.AlignVCenter
@@ -343,7 +358,7 @@ ApplicationWindow {
                                    color: theme.textColor
                                }
 
-                               Components.Avatar {
+                               Components.EAvatar {
                                    avatarSource: "qrc:/new/prefix1/fonts/pic/avatar.png"
                                    }
 
@@ -358,13 +373,13 @@ ApplicationWindow {
             }
 
 
-            Components.CardWithTextArea{
+            Components.ECardWithTextArea{
                 width: 300
                 height: 200
             }
 
 
-            Components.Calendar {
+            Components.ECalendar {
                     width: 300
                     onDateClicked: (clickedDate) => {
                         console.log("选中的日期是: " + clickedDate.toLocaleDateString())
@@ -372,7 +387,7 @@ ApplicationWindow {
                     }
                 }
 
-            Components.DataTable {
+            Components.EDataTable {
                 width: 850
                 height: 400
                 selectable: true
@@ -428,7 +443,7 @@ ApplicationWindow {
                     }
                 }
 
-            Components.Accordion {
+            Components.EAccordion {
                         width: 850
                         title: "用户协议"
 
@@ -495,41 +510,43 @@ ApplicationWindow {
                 }
 
 
-            Components.Button {
+            Components.EButton {
                 backgroundVisible: false
                 text: theme.isDark ? "切换为日间模式" : "切换为夜间模式"
                 iconCharacter: theme.isDark ? "\uf186" : "\uf185"
                 iconFontFamily: iconFont.name
+                iconRotateOnClick: true
                 onClicked: theme.toggleTheme()
             }
 
-            Components.Button {
+            Components.EButton {
                 backgroundVisible: false
                 iconCharacter: "\uf015" // 设置图标字符，这里使用 FontAwesome 中的“主页”图标 Unicode 编码
                 iconFontFamily: iconFont.name  // 设置图标字体族名称，直接引用 main.qml 中 FontLoader 组件的 name 属性，确保字体正确
                 text: "主页"
             }
 
-            Components.Button {
+            Components.EButton {
                 backgroundVisible: false
                 iconCharacter: "\uf013"
                 iconFontFamily: iconFont.name
+                iconRotateOnClick: true
                 text: ""
             }
 
-            Components.Button {
+            Components.EButton {
                 backgroundVisible: false
                 text: "返回"
                 iconCharacter: ""
             }
 
-            Components.SwitchButton {
+            Components.ESwitchButton {
                 backgroundVisible: false
                 text: "高级模式"
                 onToggled: console.log("开关状态:", checked)
             }
 
-            Components.Slider {
+            Components.ESlider {
                 backgroundVisible: false
                 width: 270
                 text: "音量"
@@ -537,21 +554,21 @@ ApplicationWindow {
                 onUserValueChanged: console.log("当前值：", value)
             }
 
-            Components.Input {
+            Components.EInput {
                 backgroundVisible: false
                 width: 200
                 placeholderText: "输入框 1"
                 passwordField: false
             }
 
-            Components.Input {
+            Components.EInput {
                 backgroundVisible: false
                 width: 200
                 placeholderText: "输入框 2"
                 passwordField: true
             }
 
-            Components.NavBar {
+            Components.ENavBar {
                 backgroundVisible: false
                 model: [
                     { display: "主页", iconChar: "\uf015" },
@@ -561,7 +578,7 @@ ApplicationWindow {
                 onItemClicked: (index, data) => console.log("点击导航项", index, data)
             }
 
-            Components.CheckBox {
+            Components.ECheckBox {
                 backgroundVisible: false
                 model: [
                         { text: "选项 A" },
@@ -576,7 +593,7 @@ ApplicationWindow {
                     }
             }
 
-            Components.RadioButton {
+            Components.ERadioButton {
                 backgroundVisible: false
                 model: [
                         { text: "男" },
@@ -591,7 +608,7 @@ ApplicationWindow {
                     }
             }
 
-            Components.List {
+            Components.EList {
                 backgroundVisible: false
                 radius: 15
                 width: 200
@@ -607,7 +624,7 @@ ApplicationWindow {
                 onItemClicked: (i, text) => console.log("Clicked:", i, text)
             }
 
-            Components.Card{
+            Components.ECard{
                 backgroundVisible: false
                 ColumnLayout {
                                spacing: 5
@@ -619,7 +636,7 @@ ApplicationWindow {
                                    color: theme.textColor
                                }
 
-                               Components.Avatar {
+                               Components.EAvatar {
                                    avatarSource: "qrc:/new/prefix1/fonts/pic/avatar.png"
                                    }
 
@@ -634,13 +651,13 @@ ApplicationWindow {
                            }
             }
 
-            Components.CardWithTextArea{
+            Components.ECardWithTextArea{
                 backgroundVisible: false
                 width: 300
                 height: 200
             }
 
-            Components.Calendar {
+            Components.ECalendar {
                     width: 300
                     backgroundVisible: false
                     onDateClicked: (clickedDate) => {
@@ -649,7 +666,7 @@ ApplicationWindow {
                     }
                 }
 
-            Components.DataTable {
+            Components.EDataTable {
                 width: 650
                 height: 400
                 backgroundVisible: false
@@ -693,7 +710,7 @@ ApplicationWindow {
             }
 
 
-            Components.Accordion {
+            Components.EAccordion {
                         width: 660
                         title: "用户协议"
                         backgroundVisible: false
@@ -759,7 +776,7 @@ ApplicationWindow {
                 }
 
 
-            Components.HoverCard {
+            Components.EHoverCard {
                 ColumnLayout {
                                spacing: 5
                                Layout.alignment: Qt.AlignVCenter
@@ -770,7 +787,7 @@ ApplicationWindow {
                                    color: theme.textColor
                                }
 
-                               Components.Avatar {
+                               Components.EAvatar {
                                    avatarSource: "qrc:/new/prefix1/fonts/pic/avatar.png"
                                    }
 
@@ -785,7 +802,7 @@ ApplicationWindow {
                            }
             }
 
-            Components.Carousel {
+            Components.ECarousel {
                     width: 400
 
                     model: [
@@ -796,7 +813,7 @@ ApplicationWindow {
                     }
                 }
 
-            Components.Clock {
+            Components.EClock {
 
             }
 
@@ -809,6 +826,66 @@ ApplicationWindow {
                     // 占位用，制造底部空白
                 }
 
+        }
+    }
+
+    Components.EAnimatedWindow {
+        id: animationWrapper1
+        Components.Aboutme {}
+    }
+
+    Components.EAnimatedWindow {
+        id: animationWrapper2
+        Column {
+            spacing: 8
+            anchors.centerIn: parent
+
+            Components.EDataTable {
+                width: 650
+                height: 400
+                selectable: true
+
+                headers: [
+                    { key: "index", label: "序号" },
+                    { key: "name", label: "姓名" },
+                    { key: "age", label: "年龄" },
+                    { key: "city", label: "城市" },
+                    { key: "email", label: "邮箱" },
+                    { key: "about", label: "简介" }
+                ]
+
+                model: ListModel {
+                    ListElement { name: "张三"; age: 25; city: "北京"; email: "zhangsan@example.com"; about: "热爱编程与开源项目，业余时间写技术博客，喜欢跑步和咖啡。"; checked: false }
+                    ListElement { name: "李四"; age: 30; city: "上海"; email: "lisi@example.com"; about: "前端开发工程师，专注用户体验与响应式设计，热衷于探索新框架。"; checked: false }
+                    ListElement { name: "王五"; age: 28; city: "广州"; email: "wangwu@example.com"; about: "全栈开发者，擅长Node.js与Python，周末常去爬山，是个户外运动爱好者。"; checked: false }
+                    ListElement { name: "赵六"; age: 32; city: "深圳"; email: "zhaoliu@example.com"; about: "AI算法工程师，研究机器学习与计算机视觉，业余玩吉他和摄影。"; checked: false }
+                    ListElement { name: "张三"; age: 25; city: "北京"; email: "zhangsan@example.com"; about: "热爱编程与开源项目，业余时间写技术博客，喜欢跑步和咖啡。"; checked: false }
+                    ListElement { name: "李四"; age: 30; city: "上海"; email: "lisi@example.com"; about: "前端开发工程师，专注用户体验与响应式设计，热衷于探索新框架。"; checked: false }
+                    ListElement { name: "王五"; age: 28; city: "广州"; email: "wangwu@example.com"; about: "全栈开发者，擅长Node.js与Python，周末常去爬山，是个户外运动爱好者。"; checked: false }
+                    ListElement { name: "赵六"; age: 32; city: "深圳"; email: "zhaoliu@example.com"; about: "AI算法工程师，研究机器学习与计算机视觉，业余玩吉他和摄影。"; checked: false }
+                    ListElement { name: "张三"; age: 25; city: "北京"; email: "zhangsan@example.com"; about: "热爱编程与开源项目，业余时间写技术博客，喜欢跑步和咖啡。"; checked: false }
+                    ListElement { name: "李四"; age: 30; city: "上海"; email: "lisi@example.com"; about: "前端开发工程师，专注用户体验与响应式设计，热衷于探索新框架。"; checked: false }
+                    ListElement { name: "王五"; age: 28; city: "广州"; email: "wangwu@example.com"; about: "全栈开发者，擅长Node.js与Python，周末常去爬山，是个户外运动爱好者。"; checked: false }
+                    ListElement { name: "赵六"; age: 32; city: "深圳"; email: "zhaoliu@example.com"; about: "AI算法工程师，研究机器学习与计算机视觉，业余玩吉他和摄影。"; checked: false }
+                    ListElement { name: "张三"; age: 25; city: "北京"; email: "zhangsan@example.com"; about: "热爱编程与开源项目，业余时间写技术博客，喜欢跑步和咖啡。"; checked: false }
+                    ListElement { name: "李四"; age: 30; city: "上海"; email: "lisi@example.com"; about: "前端开发工程师，专注用户体验与响应式设计，热衷于探索新框架。"; checked: false }
+                    ListElement { name: "王五"; age: 28; city: "广州"; email: "wangwu@example.com"; about: "全栈开发者，擅长Node.js与Python，周末常去爬山，是个户外运动爱好者。"; checked: false }
+                    ListElement { name: "赵六"; age: 32; city: "深圳"; email: "zhaoliu@example.com"; about: "AI算法工程师，研究机器学习与计算机视觉，业余玩吉他和摄影。"; checked: false }
+                }
+
+                onRowClicked: {
+                    console.log("点击行：", index, rowData.name)
+                }
+
+                onCheckStateChanged: {
+                    console.log("勾选状态改变：", index, rowData.name, "checked =", isChecked)
+                }
+            }
+
+            Components.ECardWithTextArea{
+                width: 300
+                height: 200
+            }
         }
     }
 
