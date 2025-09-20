@@ -235,9 +235,13 @@ ApplicationWindow {
                 iconCharacter: ""
             }
 
+
             Components.ESwitchButton {
-                text: "高级模式"
-                onToggled: console.log("开关状态:", checked)
+                text: "侧边栏"
+                onToggled: {
+                    console.log("开关状态:", checked)
+                    drawer1.toggle()
+                }
             }
 
             Rectangle {
@@ -316,6 +320,19 @@ ApplicationWindow {
                         console.log("当前勾选索引：", index)
 
                     }
+            }
+
+            Components.EDropdown {
+                model: [
+                    { text: "番茄炒鸡蛋" },
+                    { text: "紫菜汤" },
+                    { text: "凉拌粉丝" },
+                    { text: "红烧排骨" }
+                ]
+
+                onSelectionChanged: function(index, data) {
+                    console.log("选中索引:", index, " 文本:", data.text)
+                }
             }
 
             Components.EList {
@@ -542,8 +559,11 @@ ApplicationWindow {
 
             Components.ESwitchButton {
                 backgroundVisible: false
-                text: "高级模式"
-                onToggled: console.log("开关状态:", checked)
+                text: "侧边栏"
+                onToggled: {
+                    console.log("开关状态:", checked)
+                    drawer1.toggle()
+                }
             }
 
             Components.ESlider {
@@ -606,6 +626,21 @@ ApplicationWindow {
                         console.log("当前勾选索引：", index)
 
                     }
+            }
+
+
+            Components.EDropdown {
+                backgroundVisible: false
+                model: [
+                    { text: "番茄炒鸡蛋" },
+                    { text: "紫菜汤" },
+                    { text: "凉拌粉丝" },
+                    { text: "红烧排骨" }
+                ]
+
+                onSelectionChanged: function(index, data) {
+                    console.log("选中索引:", index, " 文本:", data.text)
+                }
             }
 
             Components.EList {
@@ -818,7 +853,6 @@ ApplicationWindow {
             }
 
 
-
             Rectangle {
                     width: flowContent.width
                     height: 200
@@ -826,6 +860,58 @@ ApplicationWindow {
                     // 占位用，制造底部空白
                 }
 
+        }
+    }
+
+    Components.EDrawer {
+        id: drawer1
+        width: 300
+        opened: false
+        backgroundVisible: true
+        anchors.right: parent.right
+        anchors.rightMargin: -30
+        padding: 30
+
+        // 插入内容
+        Components.ECheckBox {
+            model: [
+                    { text: "选项 A" },
+                    { text: "选项 B" },
+                    { text: "选项 C" },
+                    { text: "选项 D" }
+                ]
+
+                onSelectionChanged: (indexes, items) => {
+                    console.log("当前勾选索引：", indexes)
+                    console.log("当前勾选项：", JSON.stringify(items))
+                }
+        }
+
+        Components.ERadioButton {
+            model: [
+                    { text: "男" },
+                    { text: "女" },
+                    { text: "沃尔玛塑料袋" },
+                    { text: "武装直升机" }
+                ]
+
+                onSelectionChanged: (index, item) => {
+                    console.log("当前勾选索引：", index)
+
+                }
+        }
+
+        Components.EDropdown {
+            model: [
+                { text: "番茄炒鸡蛋" },
+                { text: "紫菜汤" },
+                { text: "凉拌粉丝" },
+                { text: "红烧排骨" }
+            ]
+
+            onSelectionChanged: function(index, data) {
+                console.log("选中索引:", index, " 文本:", data.text)
+            }
         }
     }
 

@@ -105,7 +105,7 @@ ColumnLayout {
         Behavior on height {
             NumberAnimation {
                 duration: 250
-                easing.type: Easing.InOutQuad
+                easing.type: Easing.OutCubic
             }
         }
 
