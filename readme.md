@@ -1,7 +1,7 @@
 # EvolveUI - Modern QML 组件库
 
 ![EvolveUI Demo](./1.png)
-
+视频演示：<iframe src="//player.bilibili.com/player.html?isOutside=true&aid=115196056047650&bvid=BV1V7p7z5EXo&cid=32354338881&p=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"></iframe>
 EvolveUI 是一个现代化、高度风格统一的 Qt6 QML 前端组件库，致力于为跨平台应用程序提供一致、优雅、响应式的 UI 体验。灵感来源于 Telegram 动效、Material Design 规范，并充分考虑了桌面与移动端的交互习惯。
 
 ---
