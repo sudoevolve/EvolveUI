@@ -220,7 +220,7 @@ ApplicationWindow {
             }
 
             Components.EButton {
-                iconCharacter: "\ue43c"
+                iconCharacter: "\uf013"
                 iconRotateOnClick: true
                 text: ""
             }
