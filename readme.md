@@ -73,7 +73,6 @@ Components.Theme {
 Components.Button {
     text: "提交"
     iconCharacter: "\uf1d8"
-    iconFontFamily: "Font Awesome 6 Free"
     onClicked: console.log("Clicked!")
 }
 ```
