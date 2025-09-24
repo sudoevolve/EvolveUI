@@ -8,7 +8,7 @@ import "components" as Components
 ApplicationWindow {
     id: root
     visible: true
-    width: 1200
+    width: 400
     height:800
     title: "Evolve UI"
 
@@ -128,7 +128,6 @@ ApplicationWindow {
         backgroundVisible: false
         text: theme.isDark ? "切换为日间模式" : "切换为夜间模式"
         iconCharacter: theme.isDark ? "\uf186" : "\uf185"
-        iconFontFamily: iconFont.name
         iconRotateOnClick: true
         onClicked: theme.toggleTheme()
     }
@@ -208,7 +207,6 @@ ApplicationWindow {
             Components.EButton {
                 text: theme.isDark ? "切换为日间模式" : "切换为夜间模式"
                 iconCharacter: theme.isDark ? "\uf186" : "\uf185"
-                iconFontFamily: iconFont.name
                 iconRotateOnClick: true //图标旋转
                 onClicked: theme.toggleTheme()
             }
@@ -216,7 +214,6 @@ ApplicationWindow {
             Components.EButton {
                 id:home
                 iconCharacter: "\uf015" // 设置图标字符，这里使用 FontAwesome 中的“主页”图标 Unicode 编码
-                iconFontFamily: iconFont.name  // 设置图标字体族名称，直接引用 main.qml 中 FontLoader 组件的 name 属性，确保字体正确
                 text: "主页"
                 onClicked: {
                     animationWrapper2.open(home)
@@ -224,8 +221,7 @@ ApplicationWindow {
             }
 
             Components.EButton {
-                iconCharacter: "\uf013"
-                iconFontFamily: iconFont.name
+                iconCharacter: "\ue43c"
                 iconRotateOnClick: true
                 text: ""
             }
@@ -531,7 +527,6 @@ ApplicationWindow {
                 backgroundVisible: false
                 text: theme.isDark ? "切换为日间模式" : "切换为夜间模式"
                 iconCharacter: theme.isDark ? "\uf186" : "\uf185"
-                iconFontFamily: iconFont.name
                 iconRotateOnClick: true
                 onClicked: theme.toggleTheme()
             }
@@ -539,14 +534,12 @@ ApplicationWindow {
             Components.EButton {
                 backgroundVisible: false
                 iconCharacter: "\uf015" // 设置图标字符，这里使用 FontAwesome 中的“主页”图标 Unicode 编码
-                iconFontFamily: iconFont.name  // 设置图标字体族名称，直接引用 main.qml 中 FontLoader 组件的 name 属性，确保字体正确
                 text: "主页"
             }
 
             Components.EButton {
                 backgroundVisible: false
                 iconCharacter: "\uf013"
-                iconFontFamily: iconFont.name
                 iconRotateOnClick: true
                 text: ""
             }
