@@ -8,7 +8,7 @@ import "components" as Components
 ApplicationWindow {
     id: root
     visible: true
-    width: 400
+    width: 1200
     height:800
     title: "Evolve UI"
 
