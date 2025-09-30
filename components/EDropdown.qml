@@ -135,12 +135,13 @@ Item {
         }
     }
 
-    // === 弹出选择框（===
+    // === 弹出选择框 ===
     Item {
         id: popupContainer
         width: root.width
         y: headerContainer.height + root.popupSpacing
-        visible: true
+        enabled: root.opened
+        visible: root.opened
         opacity: root.opened ? 1 : 0
 
         // 阴影效果
@@ -258,11 +259,18 @@ Item {
         Behavior on height { NumberAnimation { duration: 250; easing.type: Easing.InOutQuad } }
     }
 
-    // === 点击外部关闭 ===
+    // === 点击外部关闭===
     MouseArea {
         anchors.fill: parent
-        enabled: root.opened
+        enabled: root.opened           // 只在弹出时启用
         cursorShape: Qt.ArrowCursor
-        onClicked: root.opened = false
+        onClicked: root.opened = false // 点击外部关闭
+    }
+
+    Component.onCompleted: {
+        // 检测是否超出屏幕底部，自动向上弹出
+        if (popupContainer.y + popupContainer.height > parent.height) {
+            popupContainer.y = -popupContainer.height - popupSpacing
+        }
     }
 }
