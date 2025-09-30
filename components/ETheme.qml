@@ -25,7 +25,7 @@ QtObject {
 
     // === 方法 ===
     function getBorderColor(focused) {
-        return focused ? focusColor : borderColor
+        return focused ? focusColor : textColor
     }
 
     function toggleTheme() {
