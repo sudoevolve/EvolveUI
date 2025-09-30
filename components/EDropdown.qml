@@ -7,11 +7,11 @@ import QtQuick.Effects
 Item {
     id: root
 
-    // === 接口属性 ===
+    // === 基础属性 ===
     property string title: "请选择"
     property bool opened: false
-    property var model: []                   // [{ text: string, value: any }]
-    property int selectedIndex: -1           // 当前选中索引
+    property var model: []          // [{ text: "选项", value: 1 }]
+    property int selectedIndex: -1
     signal selectionChanged(int index, var item)
 
     // === 样式属性 ===
@@ -30,55 +30,51 @@ Item {
     width: 220
     height: headerHeight
 
-    // === 标题栏 ===
+    // 背景 + 文字分离（避免重影）
     Item {
         id: headerContainer
         anchors.left: parent.left
         anchors.right: parent.right
         height: root.headerHeight
 
-        // 阴影效果
-        MultiEffect {
-            source: header
-            anchors.fill: header
-            visible: root.shadowEnabled && root.backgroundVisible
-            shadowEnabled: true
-            shadowColor: root.shadowColor
-            shadowBlur: theme.shadowBlur
-            shadowVerticalOffset: theme.shadowYOffset
-            shadowHorizontalOffset: theme.shadowXOffset
-        }
-
+        // 背景矩形（仅用于阴影，无文字）
         Rectangle {
-            id: header
-            visible: root.backgroundVisible
+            id: headerBackground
             anchors.fill: parent
             radius: root.radius
-            color: root.headerColor
+            color: root.backgroundVisible ? root.headerColor : "transparent"
+            border.color: root.backgroundVisible ? "transparent" : root.textColor
+            border.width: root.backgroundVisible ? 0 : 1
+            visible: root.backgroundVisible || root.shadowEnabled
 
-            // 缩放动画
+            // 阴影效果（只作用于背景）
+            MultiEffect {
+                source: headerBackground
+                anchors.fill: headerBackground
+                visible: root.shadowEnabled
+                shadowEnabled: true
+                shadowColor: root.shadowColor
+                shadowBlur: theme.shadowBlur
+                shadowVerticalOffset: theme.shadowYOffset
+                shadowHorizontalOffset: theme.shadowXOffset
+            }
+        }
+
+        // 文字和图标（独立绘制，无阴影采样）
+        Item {
+            anchors.fill: parent
+
+            // 点击缩放动画
             transform: Scale {
                 id: headerScale
                 origin.x: width / 2
                 origin.y: height / 2
-                xScale: 1.0
-                yScale: 1.0
             }
 
             ParallelAnimation {
                 id: restoreHeaderAnimation
-                SpringAnimation {
-                    target: headerScale
-                    property: "xScale"
-                    spring: 2.5
-                    damping: 0.25
-                }
-                SpringAnimation {
-                    target: headerScale
-                    property: "yScale"
-                    spring: 2.5
-                    damping: 0.25
-                }
+                SpringAnimation { target: headerScale; property: "xScale"; spring: 2.5; damping: 0.25 }
+                SpringAnimation { target: headerScale; property: "yScale"; spring: 2.5; damping: 0.25 }
             }
 
             RowLayout {
@@ -87,7 +83,6 @@ Item {
                 spacing: 0
 
                 Text {
-                    id: titleText
                     text: root.selectedIndex >= 0 ? root.model[root.selectedIndex].text : root.title
                     color: root.textColor
                     font.pixelSize: 16
@@ -95,7 +90,6 @@ Item {
                     elide: Text.ElideRight
                     verticalAlignment: Text.AlignVCenter
                     Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignVCenter
                 }
 
                 Text {
@@ -104,38 +98,30 @@ Item {
                     font.pixelSize: 16
                     color: root.textColor
                     rotation: root.opened ? -90 : 90
-                    elide: Text.ElideLeft
-                    verticalAlignment: Text.AlignVCenter
                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                     Behavior on rotation { RotationAnimation { duration: 250; easing.type: Easing.InOutQuad } }
                 }
             }
 
+            // 点击区域
             MouseArea {
-                id: mouseArea
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-
                 onPressed: {
                     headerScale.xScale = root.pressedScale
                     headerScale.yScale = root.pressedScale
                 }
-
-                onReleased: {
-                    restoreHeaderAnimation.start()
-                }
-
-                onCanceled: {
-                    restoreHeaderAnimation.start()
-                }
-
+                onReleased: restoreHeaderAnimation.start()
+                onCanceled: restoreHeaderAnimation.start()
                 onClicked: root.opened = !root.opened
             }
         }
     }
 
-    // === 弹出选择框 ===
+    // ========================
+    // 弹出菜单
+    // ========================
     Item {
         id: popupContainer
         width: root.width
@@ -144,24 +130,24 @@ Item {
         visible: root.opened
         opacity: root.opened ? 1 : 0
 
-        // 阴影效果
+        // 阴影（只作用于弹出背景）
         MultiEffect {
             source: popupBackground
             anchors.fill: popupBackground
             visible: root.shadowEnabled
-            shadowEnabled: root.shadowEnabled
+            shadowEnabled: true
             shadowColor: root.shadowColor
             shadowBlur: theme.shadowBlur
             shadowVerticalOffset: theme.shadowYOffset
             shadowHorizontalOffset: theme.shadowXOffset
         }
 
-        // 背景矩形
+        // 弹出背景
         Rectangle {
             id: popupBackground
             width: root.width
             radius: root.radius
-            color: root.backgroundVisible ? theme.secondaryColor : "transparent"
+            color: root.backgroundVisible ? root.headerColor : "transparent"
             clip: true
             height: Math.min(contentLayout.implicitHeight, root.popupMaxHeight)
 
@@ -196,52 +182,25 @@ Item {
                                 id: itemScale
                                 origin.x: width / 2
                                 origin.y: height / 2
-                                xScale: 1.0
-                                yScale: 1.0
                             }
 
                             ParallelAnimation {
                                 id: restoreItemAnimation
-                                SpringAnimation {
-                                    target: itemScale
-                                    property: "xScale"
-                                    spring: 2.5
-                                    damping: 0.25
-                                }
-                                SpringAnimation {
-                                    target: itemScale
-                                    property: "yScale"
-                                    spring: 2.5
-                                    damping: 0.25
-                                }
-                                NumberAnimation {
-                                    target: itemBg
-                                    property: "opacity"
-                                    to: 1.0
-                                    duration: 150
-                                    easing.type: Easing.InOutQuad
-                                }
+                                SpringAnimation { target: itemScale; property: "xScale"; spring: 2.5; damping: 0.25 }
+                                SpringAnimation { target: itemScale; property: "yScale"; spring: 2.5; damping: 0.25 }
+                                NumberAnimation { target: itemBg; property: "opacity"; to: 1; duration: 150 }
                             }
 
                             MouseArea {
-                                id: itemMouseArea
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-
                                 onPressed: {
                                     itemScale.xScale = root.pressedScale
                                     itemScale.yScale = root.pressedScale
                                 }
-
-                                onReleased: {
-                                    restoreItemAnimation.start()
-                                }
-
-                                onCanceled: {
-                                    restoreItemAnimation.start()
-                                }
-
+                                onReleased: restoreItemAnimation.start()
+                                onCanceled: restoreItemAnimation.start()
                                 onClicked: {
                                     root.selectedIndex = index
                                     root.opened = false
@@ -254,23 +213,26 @@ Item {
             }
         }
 
-        // === 动画行为 ===
+        // 动画
         Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.InOutQuad } }
         Behavior on height { NumberAnimation { duration: 250; easing.type: Easing.InOutQuad } }
     }
 
-    // === 点击外部关闭===
+    // 点击外部关闭
     MouseArea {
         anchors.fill: parent
-        enabled: root.opened           // 只在弹出时启用
-        cursorShape: Qt.ArrowCursor
-        onClicked: root.opened = false // 点击外部关闭
+        enabled: root.opened
+        onClicked: root.opened = false
     }
 
+    // 安全增强
     Component.onCompleted: {
-        // 检测是否超出屏幕底部，自动向上弹出
         if (popupContainer.y + popupContainer.height > parent.height) {
-            popupContainer.y = -popupContainer.height - popupSpacing
+            popupContainer.y = -popupContainer.height - root.popupSpacing
         }
+    }
+
+    onModelChanged: {
+        if (selectedIndex >= model.length) selectedIndex = -1
     }
 }
