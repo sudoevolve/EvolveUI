@@ -37,6 +37,18 @@ Item {
         anchors.right: parent.right
         height: root.headerHeight
 
+        // 阴影效果（只作用于背景）
+        MultiEffect {
+            source: headerBackground
+            anchors.fill: headerBackground
+            visible: root.shadowEnabled
+            shadowEnabled: true
+            shadowColor: root.shadowColor
+            shadowBlur: theme.shadowBlur
+            shadowVerticalOffset: theme.shadowYOffset
+            shadowHorizontalOffset: theme.shadowXOffset
+        }
+
         // 背景矩形（仅用于阴影，无文字）
         Rectangle {
             id: headerBackground
@@ -46,18 +58,6 @@ Item {
             border.color: root.backgroundVisible ? "transparent" : root.textColor
             border.width: root.backgroundVisible ? 0 : 1
             visible: root.backgroundVisible || root.shadowEnabled
-
-            // 阴影效果（只作用于背景）
-            MultiEffect {
-                source: headerBackground
-                anchors.fill: headerBackground
-                visible: root.shadowEnabled
-                shadowEnabled: true
-                shadowColor: root.shadowColor
-                shadowBlur: theme.shadowBlur
-                shadowVerticalOffset: theme.shadowYOffset
-                shadowHorizontalOffset: theme.shadowXOffset
-            }
         }
 
         // 文字和图标（独立绘制，无阴影采样）
@@ -119,9 +119,7 @@ Item {
         }
     }
 
-    // ========================
     // 弹出菜单
-    // ========================
     Item {
         id: popupContainer
         width: root.width
