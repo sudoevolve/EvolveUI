@@ -1,33 +1,47 @@
-//EAvatar.qml
+// EAvatar.qml
 import QtQuick 6.2
 import QtQuick.Controls
 import QtQuick.Effects
-import Qt5Compat.GraphicalEffects
 
 Item {
     id: root
     width: 80
     height: 80
 
-    property url avatarSource: "qrc:/new/prefix1/fonts/pic/avatar.png" // 图片路径
+    property url avatarSource: "qrc:/new/prefix1/fonts/pic/avatar.png"
 
+    // 原始图像，隐藏
     Image {
-        id: avatar
+        id: sourceItem
         source: root.avatarSource
-        anchors.fill: parent
+        anchors.centerIn: parent
+        width: root.width
+        height: root.height
         fillMode: Image.PreserveAspectCrop
+        visible: false
     }
 
-    Rectangle {
-        id: maskCircle
-        anchors.fill: parent
-        radius: width / 2
-        visible: false // 只作为 mask 使用，不显示
+    //
+    MultiEffect {
+        id: multiEffect
+        source: sourceItem
+        anchors.fill: sourceItem
+        maskEnabled: true
+        maskSource: mask
     }
 
-    OpacityMask {
-        anchors.fill: parent
-        source: avatar
-        maskSource: maskCircle
+    // 圆形黑色矩形（用于遮罩）
+    Item {
+        id: mask
+        width: sourceItem.width
+        height: sourceItem.height
+        layer.enabled: true
+        visible: false
+
+        Rectangle {
+            anchors.fill: parent
+            radius: width / 2
+            color: "black" // 黑色用于掩码：纯黑表示完全不透明
+        }
     }
 }
