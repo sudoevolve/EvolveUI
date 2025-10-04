@@ -59,14 +59,15 @@ Item {
         TextField {
             id: textField
             Layout.fillWidth: true
+            Layout.fillHeight: true
             Layout.alignment: Qt.AlignVCenter
-            height: parent.height * 0.7
 
             font.pixelSize: root.fontSize
             color: theme.textColor
             placeholderTextColor: theme.textColor
             readOnly: root.readOnly
             enabled: root.enabled
+            verticalAlignment: Text.AlignVCenter
             echoMode: root.passwordField
                       ? (root.passwordVisible ? TextInput.Normal : TextInput.Password)
                       : TextInput.Normal
