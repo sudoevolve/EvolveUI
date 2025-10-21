@@ -38,6 +38,8 @@ Item {
         width: root.width
         height: root.height
         y: 0
+        // 初始位置直接设为关闭态
+        x: parent.width
 
         // === 阴影 ===
         MultiEffect {
@@ -60,9 +62,19 @@ Item {
             color: root.drawerColor
         }
 
+        // === 背景拦截层：防止点击穿透到底层 ===
+        MouseArea {
+            anchors.fill: parent
+            enabled: root.opened
+            hoverEnabled: true
+            acceptedButtons: Qt.AllButtons
+            preventStealing: true
+        }
+
         // === 内容布局 ===
         Column {
             id: contentLayout
+            z: 1
             anchors.fill: parent
             spacing: columnspacing
             anchors.margins: root.padding
@@ -83,7 +95,15 @@ Item {
         ]
 
         transitions: [
+            // 仅在 opened <-> closed 之间切换时执行动画，避免初始从基态到 closed 的动画
             Transition {
+                from: "closed"
+                to: "opened"
+                NumberAnimation { properties: "x"; duration: 500; easing.type: Easing.OutCubic }
+            },
+            Transition {
+                from: "opened"
+                to: "closed"
                 NumberAnimation { properties: "x"; duration: 500; easing.type: Easing.OutCubic }
             }
         ]

@@ -119,7 +119,7 @@ Item {
             Text {
                 text: "<"
                 font.pixelSize: 20
-                color: theme.textColor
+                color: theme.focusColor
                 Layout.preferredWidth: 30
                 horizontalAlignment: Text.AlignHCenter
                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: goToPrevMonth() }
@@ -139,7 +139,7 @@ Item {
             Text {
                 text: ">"
                 font.pixelSize: 20
-                color: theme.textColor
+                color: theme.focusColor
                 Layout.preferredWidth: 30
                 horizontalAlignment: Text.AlignHCenter
                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: goToNextMonth() }

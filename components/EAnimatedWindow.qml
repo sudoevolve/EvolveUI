@@ -4,10 +4,29 @@ import QtQuick.Controls
 
 Item {
     id: animationWrapper
+    z: 999
     visible: false
     state: "iconState"
     width: parent.width
     height: parent.height
+    focus: visible && state === "fullscreenState"
+
+    // 记录是否已在主题计数中登记为“打开”
+    property bool _lastOpenState: false
+
+    // 聚合：根据当前状态更新 theme.openAnimatedWindowCount
+    function _updateThemeOpenCount() {
+        // 依赖外部传入的 theme（全局在 Main.qml 通过 Loader 传递）
+        if (!theme) return
+        var nowOpen = (state === "fullscreenState")
+        if (nowOpen === _lastOpenState) return
+        _lastOpenState = nowOpen
+        if (nowOpen) {
+            theme.openAnimatedWindowCount += 1
+        } else {
+            theme.openAnimatedWindowCount -= 1
+        }
+    }
 
     // ===== 可配置属性  =====
     property int animDuration: 450
@@ -119,6 +138,7 @@ Item {
         // 6. 启动动画
         visible = true;
         state = "fullscreenState";
+        _updateThemeOpenCount();
     }
 
     // ===== UI 元素 =====
@@ -130,12 +150,24 @@ Item {
             Rotation { id: rotationX; axis { x: 1; y: 0; z: 0 } origin.x: appContainer.width / 2; origin.y: appContainer.height / 2 }
         ]
 
+        // 屏蔽底层点击的拦截层（仅在全屏状态启用）
+        MouseArea {
+            id: modalBlocker
+            anchors.fill: parent
+            z: 0
+            enabled: animationWrapper.visible && animationWrapper.state === "fullscreenState"
+            hoverEnabled: true
+            acceptedButtons: Qt.AllButtons
+            preventStealing: true
+        }
+
         Item {
             id: windowContent
             anchors.fill: parent
             clip: true
             opacity: 0
             layer.enabled: true
+            z: 1
 
             Item {
                 id: contentArea
@@ -226,6 +258,8 @@ Item {
                         startState.sourceItem.opacity = 1;
                         startState.sourceItem = null;
                     }
+                    // 在动画收尾完成时确保聚合状态为关闭
+                    _updateThemeOpenCount();
                 }
             }
 
@@ -256,4 +290,15 @@ Item {
             }
         }
     ]
+
+    // 绑定：只要状态变更，尝试更新聚合计数
+    onStateChanged: _updateThemeOpenCount()
+
+    // 初始化：确保初始状态与计数一致（通常为 iconState，不会更改计数）
+    Component.onCompleted: _updateThemeOpenCount()
+
+    // 防泄漏：组件销毁时如果仍标记为打开，主动减计数
+    Component.onDestruction: {
+        if (_lastOpenState && theme) theme.openAnimatedWindowCount -= 1
+    }
 }

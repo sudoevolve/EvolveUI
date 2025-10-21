@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ==========================
 # 查找 Qt6 Quick 模块
 # ==========================
-find_package(Qt6 REQUIRED COMPONENTS Quick)
+find_package(Qt6 REQUIRED COMPONENTS Quick Multimedia Network)
 
 qt_standard_project_setup(REQUIRES 6.8)
 
@@ -19,6 +19,8 @@ qt_standard_project_setup(REQUIRES 6.8)
 # ==========================
 qt_add_executable(appEvolveUI
     main.cpp
+    core/music.h
+    core/music.cpp
 )
 
 # ==========================
@@ -48,11 +50,25 @@ qt_add_qml_module(appEvolveUI
         components/ECarousel.qml
         components/EClock.qml
         components/ECardWithTextArea.qml
-        QML_FILES components/EDataTable.qml
-        QML_FILES components/EAnimatedWindow.qml
-        QML_FILES components/Aboutme.qml
-        QML_FILES components/EDrawer.qml
-        QML_FILES components/EDropdown.qml
+        components/EDataTable.qml
+        components/EAnimatedWindow.qml
+        components/Aboutme.qml
+        components/EDrawer.qml
+        components/EDropdown.qml
+        components/EMusicPlayer.qml
+        components/EFitnessProgress.qml
+        components/EYearProgress.qml
+        components/ENextHolidayCountdown.qml
+        components/EClockCard.qml
+        components/EHitokotoCard.qml
+        components/EBatteryCard.qml
+        pages/BaseComponents.qml
+        pages/NoBackgroundComponents.qml
+        pages/OtherComponents.qml
+        QML_FILES components/ESimpleDatePicker.qml
+        QML_FILES
+        QML_FILES components/EAlertDialog.qml
+
 )
 
 # ==========================
@@ -79,7 +95,7 @@ set_target_properties(appEvolveUI PROPERTIES
 # 链接 Qt 库
 # ==========================
 target_link_libraries(appEvolveUI
-    PRIVATE Qt6::Quick
+    PRIVATE Qt6::Quick Qt6::Multimedia Qt6::Network
 )
 
 # ==========================

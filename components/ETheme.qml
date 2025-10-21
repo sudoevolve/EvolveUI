@@ -6,13 +6,24 @@ QtObject {
 
     property bool isDark: false
 
+    // === 全局动画窗口状态聚合 ===
+    // 当前打开的动画窗口数量（由各 EAnimatedWindow 自动维护）
+    property int openAnimatedWindowCount: 0
+    // 是否有任意动画窗口处于全屏打开状态
+    property bool anyAnimatedWindowOpen: openAnimatedWindowCount > 0
+
     // === 基础颜色 ===
     property color primaryColor: isDark ? "#121212" : "#ffffff"
     property color secondaryColor: isDark ? "#212121" : "#E9EEF6"
     property color textColor: isDark ? "#ffffff" : "#000000"
     property color borderColor: isDark ? "#666666" : "#cccccc"
     property color blurOverlayColor: isDark ? "#4E000000" : "#4EFFFFFF"
-    property color focusColor: "#00C4B3"
+    // 默认强调色（非播放状态使用）
+    property color defaultFocusColor: "#00C4B3"
+    property color focusColor: defaultFocusColor
+
+    // === 全局音量（0.0 - 1.0），用于 EMusicPlayer 绑定 ===
+    property real musicVolume: 1.0
 
     // === 阴影统一样式 ===
     property color shadowColor: isDark ? "#80000000" : "#40000000"
@@ -30,5 +41,13 @@ QtObject {
 
     function toggleTheme() {
         isDark = !isDark
+    }
+
+    // 播放音乐时由 EMusicPlayer 更新 focusColor，这里对强调色切换做缓动渐变
+    Behavior on focusColor {
+        ColorAnimation {
+            duration: 180
+            easing.type: Easing.OutCubic
+        }
     }
 }

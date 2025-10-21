@@ -1,7 +1,7 @@
 # EvolveUI - Modern QML 组件库
 
-![EvolveUI Demo](./1.jpg)
-视频演示：https://www.bilibili.com/video/BV1R6pXzLEKy/?spm_id_from=333.1387.homepage.video_card.click&vd_source=41bd5c69bc7cc80ada0803d85aba4d33
+![EvolveUI Demo](./1.png)
+视频演示：https://www.bilibili.com/video/BV1V7p7z5EXo/?share_source=copy_web&vd_source=b844db396ae05cb943336dd6b72ebf5a
 EvolveUI 是一个现代化、高度风格统一的 Qt6 QML 前端组件库，致力于为跨平台应用程序提供一致、优雅、响应式的 UI 体验。灵感来源于 Telegram 动效、Material Design 规范，并充分考虑了桌面与移动端的交互习惯。
 
 ---
@@ -24,6 +24,7 @@ EvolveUI 是一个现代化、高度风格统一的 Qt6 QML 前端组件库，�
 | `EAccordion.qml`       | 下拉信息栏                             |
 | `EAnimatedWindow.qml`  | iPad os动画风格窗口组件                 |
 | `EAvatar.qml`          | 头像组件                               |
+| `EBatteryCard.qml`     | 电池状态卡片组件                        |
 | `EBlurCard.qml`        | 高斯模糊卡片组件                        |
 | `EButton.qml`          | 带图标 + 动画的圆角按钮组件              |
 | `ECalendar.qml`        | 日历组件                                |
@@ -32,18 +33,26 @@ EvolveUI 是一个现代化、高度风格统一的 Qt6 QML 前端组件库，�
 | `ECarousel.qml`        | 轮播组件                                |
 | `ECheckBox.qml`        | 动画复选框组件                          |
 | `EClock.qml`           | 时钟显示组件                            |
+| `EClockCard.qml`       | 时钟卡片容器组件                        |
 | `EDataTable.qml`       | 高性能表格组件                           |
-| `EDrawer.qml`          | 侧边栏组件                           |
+| `EDrawer.qml`          | 侧边栏组件                              |
 | `EDropdown.qml`        | 下拉选择框组件                           |
+| `EFitnessProgress.qml` | 健身进度展示组件                        |
+| `EHitokotoCard.qml`    | 一言卡片组件                            |
 | `EHoverCard.qml`       | 鼠标悬停浮起卡片容器组件                |
 | `EInput.qml`           | 支持焦点变色与阴影的输入框              |
 | `EList.qml`            | 列表展示组件                            |
+| `EMusicPlayer.qml`     | 音乐播放器组件                          |
 | `ENavBar.qml`          | 导航栏组件                              |
+| `ENextHolidayCountdown.qml` | 假期倒计时组件                   |
 | `ERadioButton.qml`     | 动画单选组件                            |
+| `ESimpleDatePicker.qml`| 简易日期选择组件                        |
 | `ESlider.qml`          | 支持滑块动画的调节组件                  |
 | `ESwitchButton.qml`    | 动画开关组件                            |
 | `ETheme.qml`           | 全局样式与颜色定义                      |
 | `ETimeDisplay.qml`     | 时间显示组件                            |
+| `EYearProgress.qml`    | 年度进度展示组件                        |
+| `EAlertDialog.qml`     | 弹窗组件（遮罩、模糊、确认/取消）       |
 
 
 ## ♻️ 如何复用组件
@@ -64,13 +73,13 @@ FontLoader {
 }
 
 // 引入主题
-Components.Theme {
+Components.ETheme {
     id: theme
 }
 ```
 
 ```qml
-Components.Button {
+Components.EButton {
     text: "提交"
     iconCharacter: "\uf1d8"
     onClicked: console.log("Clicked!")

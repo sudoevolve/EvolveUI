@@ -9,7 +9,7 @@ Item {
 
     // === 基础属性 ===
     property string title: "请选择"
-    property bool opened: false
+    property bool opened: true
     property var model: []          // [{ text: "选项", value: 1 }]
     property int selectedIndex: -1
     signal selectionChanged(int index, var item)
@@ -96,7 +96,7 @@ Item {
                     text: "\uf054"
                     font.family: "Font Awesome 6 Free"
                     font.pixelSize: 16
-                    color: root.textColor
+                    color: theme.focusColor
                     rotation: root.opened ? -90 : 90
                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                     Behavior on rotation { RotationAnimation { duration: 250; easing.type: Easing.InOutQuad } }

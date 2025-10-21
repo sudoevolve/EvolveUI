@@ -73,7 +73,7 @@ ColumnLayout {
                 text: "\uf054"   // FontAwesome: chevron-right
                 font.family: "Font Awesome 6 Free"
                 font.pixelSize: 16
-                color: root.textColor
+                color: theme.focusColor
                 rotation: root.expanded ? -90 : 90
                 Behavior on rotation {
                     RotationAnimation { duration: 250; easing.type: Easing.InOutQuad }

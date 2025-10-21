@@ -22,7 +22,7 @@ Rectangle {
     property color buttonColor: theme.secondaryColor
     property color hoverColor: Qt.darker(buttonColor, 1.2)
     property color textColor: theme.textColor
-    property color thumbColor: theme.textColor
+    property color thumbColor: theme.focusColor
     property bool shadowEnabled: true
     property real pressedScale: 0.96
     property color shadowColor: theme.shadowColor
@@ -94,7 +94,7 @@ Rectangle {
                 width: thumbSize
                 height: thumbSize
                 radius: thumbSize / 2
-                color: root.buttonColor
+                color: root.thumbColor
                 anchors.verticalCenter: parent.verticalCenter
 
                 property int edgePadding: 1
