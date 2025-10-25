@@ -3,7 +3,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Effects
-import Qt5Compat.GraphicalEffects
 
 Item {
     id: root
@@ -41,58 +40,87 @@ Item {
         clip: true
 
         // ==== 图片滑动视图 ====
-        SwipeView {
-            id: swipeView
+        Item {
+            id: swipeContainer
             anchors.fill: parent
-            interactive: model.length > 1
 
-            // 强制圆角
-            layer.enabled: true
-            layer.effect: OpacityMask {
-                maskSource: Item {
-                    width: swipeView.width
-                    height: swipeView.height
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: root.radius
+            SwipeView {
+                id: swipeView
+                anchors.fill: parent
+                interactive: model.length > 1
+                visible: true
+                opacity: 0 // 保持可交互但不直接显示（由掩模负责显示）
+
+                // ==== 图片重复显示 ====
+                Repeater {
+                    model: root.model
+                    delegate: Item {
+                        width: swipeView.width
+                        height: swipeView.height
+
+                        // 原始图像（隐藏），用于 MultiEffect 的 source
+                        Image {
+                            id: sourceItem
+                            anchors.fill: parent
+                            fillMode: Image.PreserveAspectCrop
+                            cache: true
+                            asynchronous: true
+                            visible: true
+
+                            // 使用组件大小优化加载
+                            property int targetWidth: Math.round(swipeView.width)
+                            property int targetHeight: Math.round(swipeView.height)
+                            property string optimizedSource: {
+                                var src = modelData
+                                if (src.indexOf("?") === -1)
+                                    return src + "?w=" + targetWidth + "&h=" + targetHeight
+                                else
+                                    return src + "&w=" + targetWidth + "&h=" + targetHeight
+                            }
+                            source: optimizedSource
+                        }
+
+                        // 移除单图圆角裁剪，保留容器级圆角显示
+
+                        // 加载占位：主题色三点加载动画
+                        ELoader {
+                            anchors.centerIn: parent
+                            size: Math.min(parent.width, parent.height) * 0.15
+                            speed: 0.8
+                            color: theme ? theme.focusColor : "#5D3FD3"
+                            visible: sourceItem.status !== Image.Ready
+                            z: 2
+                        }
                     }
                 }
             }
 
-            // ==== 图片重复显示 ====
-            Repeater {
-                model: root.model
-                delegate: Item {
-                    width: swipeView.width
-                    height: swipeView.height
+            // 容器级掩模，保证滑动时区域保持圆角
+            MultiEffect {
+                id: swipeMasked
+                source: swipeView
+                anchors.fill: parent
+                maskEnabled: true
+                maskSource: containerMask
+                autoPaddingEnabled: false
+                antialiasing: true
+                layer.enabled: true
+                maskThresholdMin: 0.5
+                maskSpreadAtMin: 1.0
+                z: 1
+            }
 
-                    Image {
-                        id: img
-                        anchors.fill: parent
-                        fillMode: Image.PreserveAspectCrop
-                        cache: true
-                        asynchronous: true
+            // 圆角掩模图形
+            Item {
+                id: containerMask
+                anchors.fill: parent
+                layer.enabled: true
 
-                        // 使用组件大小优化加载
-                        property int targetWidth: Math.round(swipeView.width)
-                        property int targetHeight: Math.round(swipeView.height)
-
-                        property string optimizedSource: {
-                            var src = modelData
-                            if (src.indexOf("?") === -1)
-                                return src + "?w=" + targetWidth + "&h=" + targetHeight
-                            else
-                                return src + "&w=" + targetWidth + "&h=" + targetHeight
-                        }
-
-                        source: optimizedSource
-
-                        Rectangle {
-                            anchors.fill: parent
-                            color: "#333"
-                            visible: img.status !== Image.Ready
-                        }
-                    }
+                visible: false
+                Rectangle {
+                    anchors.fill: parent
+                    radius: root.radius
+                    color: "black"
                 }
             }
         }
