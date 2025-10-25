@@ -29,7 +29,18 @@ Item {
         color: Qt.rgba(0,0,0,0.45)
         opacity: 0
         Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
-         MouseArea { anchors.fill: parent; onClicked: if (dialogRoot.dismissOnOverlay) dialogRoot.close() }
+        MouseArea { 
+            anchors.fill: parent
+            acceptedButtons: Qt.AllButtons  // 接受所有鼠标按钮事件
+            propagateComposedEvents: false  // 阻止事件穿透
+            hoverEnabled: true  // 启用悬停事件处理
+            onClicked: if (dialogRoot.dismissOnOverlay) dialogRoot.close()
+            // 阻止所有鼠标事件穿透
+            onPressed: mouse.accepted = true
+            onReleased: mouse.accepted = true
+            onDoubleClicked: mouse.accepted = true
+            onWheel: wheel.accepted = true
+        }
      }
 
     // 毛玻璃对话框主体

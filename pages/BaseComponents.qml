@@ -92,10 +92,20 @@ Flow {
         minimumValue: 0
         maximumValue: 100
         value: Math.round(theme.musicVolume * 100)
-        onUserValueChanged: {
+        onUserValueChanged: function(value) {
             theme.musicVolume = value / 100.0
             console.log("当前音量：", Math.round(theme.musicVolume * 100) + "%")
         }
+    }
+
+    Components.ESlider {
+        width: 280
+        text: "音量"
+        showSpinBox: true
+        minimumValue: 0
+        maximumValue: 300
+        value: 120
+        onUserValueChanged: console.log("当前值：", value)
     }
 
     Components.EInput {
