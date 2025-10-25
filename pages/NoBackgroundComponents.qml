@@ -104,6 +104,7 @@ Flow {
         minimumValue: 0
         maximumValue: 300
         value: 120
+        backgroundVisible: false
         onUserValueChanged: console.log("当前值：", value)
     }
 
