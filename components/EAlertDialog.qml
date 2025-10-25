@@ -36,10 +36,10 @@ Item {
             hoverEnabled: true  // 启用悬停事件处理
             onClicked: if (dialogRoot.dismissOnOverlay) dialogRoot.close()
             // 阻止所有鼠标事件穿透
-            onPressed: mouse.accepted = true
-            onReleased: mouse.accepted = true
-            onDoubleClicked: mouse.accepted = true
-            onWheel: wheel.accepted = true
+            onPressed: function(mouse) { mouse.accepted = true }
+            onReleased: function(mouse) { mouse.accepted = true }
+            onDoubleClicked: function(mouse) { mouse.accepted = true }
+            onWheel: function(wheel) { wheel.accepted = true }
         }
      }
 
