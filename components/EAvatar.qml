@@ -28,6 +28,10 @@ Item {
         anchors.fill: sourceItem
         maskEnabled: true
         maskSource: mask
+        // 下面两个属性抗锯齿
+        maskThresholdMin: 0.5
+        maskSpreadAtMin: 1.0
+
     }
 
     // 圆形黑色矩形（用于遮罩）
@@ -37,6 +41,7 @@ Item {
         height: sourceItem.height
         layer.enabled: true
         visible: false
+        
 
         Rectangle {
             anchors.fill: parent

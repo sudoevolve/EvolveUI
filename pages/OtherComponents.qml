@@ -116,6 +116,28 @@ Flow {
 
     Rectangle {
         width: parent.width
+        height: 150
+        color: "transparent"
+        // 占位用，制造空白
+    }
+
+    Rectangle {
+        width: 400
+        height: 50
+        color: "transparent"
+        // 占位用，制造空白
+    }
+
+
+    Components.ELoader {
+        size: 50
+        x: 150
+        speed: 0.8
+    }
+
+
+    Rectangle {
+        width: parent.width
         height: 1000
         color: "transparent"
         // 占位用，制造空白

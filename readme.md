@@ -42,6 +42,7 @@ EvolveUI 是一个现代化、高度风格统一的 Qt6 QML 前端组件库，�
 | `EHoverCard.qml`       | 鼠标悬停浮起卡片容器组件                |
 | `EInput.qml`           | 支持焦点变色与阴影的输入框              |
 | `EList.qml`            | 列表展示组件                            |
+| `Eloader.qml`           | 加载动画组件                  |
 | `EMusicPlayer.qml`     | 音乐播放器组件                          |
 | `ENavBar.qml`          | 导航栏组件                              |
 | `ENextHolidayCountdown.qml` | 假期倒计时组件                   |

@@ -85,7 +85,6 @@ Item {
             visible: root.backgroundVisible && root.bingImageUrl !== ""
             maskEnabled: true
             maskSource: backgroundMask
-            autoPaddingEnabled: false
         }
 
         // 圆角遮罩图形
@@ -103,6 +102,16 @@ Item {
                 antialiasing: true
                 smooth: true
             }
+        }
+
+        // 加载占位：主题色三点动画（图片未就绪时显示）
+        ELoader {
+            anchors.centerIn: parent
+            size: 50
+            speed: 0.8
+            color: theme ? theme.focusColor : "#5D3FD3"
+            visible: root.backgroundVisible && (bingSource.status !== Image.Ready || root.bingImageUrl === "")
+            z: 1.5
         }
 
         // 叠加半透明主题色，避免过亮/过透明（与音乐播放器一致）
