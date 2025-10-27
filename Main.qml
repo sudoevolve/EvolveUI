@@ -331,11 +331,26 @@ ApplicationWindow {
             anchors.topMargin: 580
             property int currentIndex: 0
             property var currentItem: currentIndex === 0 ? baseLoader.item : currentIndex === 1 ? noBgLoader.item : currentIndex === 2 ? otherLoader.item : null
+            
+            // 跟踪哪些页面已经被加载过
+            property bool noBgLoaded: false
+            property bool otherLoaded: false
+            
+            // 监听currentIndex变化，按需加载页面
+            onCurrentIndexChanged: {
+                if (currentIndex === 1 && !noBgLoaded) {
+                    noBgLoader.active = true
+                    noBgLoaded = true
+                } else if (currentIndex === 2 && !otherLoaded) {
+                    otherLoader.active = true
+                    otherLoaded = true
+                }
+            }
 
             Loader {
                 id: baseLoader
                 source: "pages/BaseComponents.qml"
-                active: pages.currentIndex === 0
+                active: true  // 始终保持加载状态
                 visible: pages.currentIndex === 0
                 onLoaded: {
                     if (item && !item.theme) item.theme = theme
@@ -345,7 +360,7 @@ ApplicationWindow {
             Loader {
                 id: noBgLoader
                 source: "pages/NoBackgroundComponents.qml"
-                active: pages.currentIndex === 1
+                active: false  // 初始不加载，首次切换时才加载
                 visible: pages.currentIndex === 1
                 onLoaded: {
                     if (item && !item.theme) item.theme = theme
@@ -355,7 +370,7 @@ ApplicationWindow {
             Loader {
                 id: otherLoader
                 source: "pages/OtherComponents.qml"
-                active: pages.currentIndex === 2
+                active: false  // 初始不加载，首次切换时才加载
                 visible: pages.currentIndex === 2
                 onLoaded: {
                     if (item && !item.theme) item.theme = theme
