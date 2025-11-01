@@ -21,11 +21,11 @@ EvolveUI 是一个现代化、高度风格统一的 Qt6 QML 前端组件库，�
 以下是我们 EvolveUI 组件库的部分界面预览，展示了不同组件在实际应用中的效果：
 
 <div align="center">
-  <img src="./preview1.png" width="45%" alt="预览图1"/>
-  <img src="./preview2.png" width="45%" alt="预览图2"/> 
+  <img src="./preview/2.png" width="45%" alt="预览图1"/>
+  <img src="./preview/3.png" width="45%" alt="预览图2"/> 
   <br/><br/>
-  <img src="./preview3.png" width="45%" alt="预览图3"/>
-  <img src="./preview4.png" width="45%" alt="预览图4"/>
+  <img src="./preview/4.png" width="45%" alt="预览图3"/>
+  <img src="./preview/5.png" width="45%" alt="预览图4"/>
 </div>
 
 > 更多组件效果请查看 [视频演示](https://www.bilibili.com/video/BV1JQ1uBBEPy/?vd_source=41bd5c69bc7cc80ada0803d85aba4d33#reply281100795376)
