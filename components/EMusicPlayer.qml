@@ -187,7 +187,7 @@ Rectangle {
             // 无元数据时不加载壁纸，背景仍使用纯色叠加
             source: root.coverImageIsDefault ? "" : root.coverImage
             fillMode: Image.PreserveAspectCrop
-            cache: false
+            cache: true
             asynchronous: true
             sourceSize: Qt.size(Math.round(width), Math.round(height))
             visible: false

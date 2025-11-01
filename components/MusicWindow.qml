@@ -46,13 +46,11 @@ Item {
         visible: false
         source: coverIsDefault ? "" : coverImage
         fillMode: Image.PreserveAspectCrop
-        cache: false
-        asynchronous: true
-        sourceSize.width: Math.round(width)
-        sourceSize.height: Math.round(height)
+        cache: true
+        asynchronous: false
         antialiasing: true
         smooth: true
-        mipmap: false
+        mipmap: true
     }
 
     // 模糊封面背景
@@ -124,13 +122,12 @@ Item {
             anchors.fill: parent
             source: coverImage
             fillMode: Image.PreserveAspectCrop
-            cache: false
-            asynchronous: true
-            sourceSize: Qt.size(Math.round(width), Math.round(height))
+            cache: true
+            asynchronous: false
             visible: false
             antialiasing: true
             smooth: true
-            mipmap: false
+            mipmap: true
         }
 
         Item {
