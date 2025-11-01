@@ -36,6 +36,8 @@ Item {
     property real maxTiltAngle: 35
     property color textColor: theme.textColor
     property color fullscreenColor: theme.secondaryColor
+    // 点击遮罩是否关闭窗口（默认关闭为 false）
+    property bool dismissOnOverlay: false
 
     default property alias contentData: contentArea.data  // 允许外部添加子项
 
@@ -159,6 +161,19 @@ Item {
             hoverEnabled: true
             acceptedButtons: Qt.AllButtons
             preventStealing: true
+            propagateComposedEvents: false
+            onClicked: {
+                // 拦截点击并可选关闭
+                if (animationWrapper.dismissOnOverlay) {
+                    if (animationWrapper.isAnimating) return;
+                    animationWrapper.isAnimating = true;
+                    animationWrapper.state = "iconState";
+                }
+            }
+            onPressed: function(mouse) { mouse.accepted = true }
+            onReleased: function(mouse) { mouse.accepted = true }
+            onDoubleClicked: function(mouse) { mouse.accepted = true }
+            onWheel: function(wheel) { wheel.accepted = true }
         }
 
         Item {
@@ -241,10 +256,7 @@ Item {
                     }
                 }
                 ColorAnimation { target: appContainer; property:"color"; to: fullscreenColor; duration: animDuration }
-                SequentialAnimation {
-                    PauseAnimation { duration: animDuration * 0.5 }
-                    NumberAnimation { target: windowContent; property:"opacity"; to: 1; duration: animDuration * 0.5 }
-                }
+                NumberAnimation { target: windowContent; property:"opacity"; to: 1; duration: animDuration * 0.24; easing.type: Easing.OutQuart }
             }
         },
 

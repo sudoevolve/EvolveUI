@@ -4,6 +4,8 @@ import "../components" as Components
 
 Flow {
     property var theme
+    // 主窗口传入：打开全屏音乐详情窗口的方法
+    property var openMusicWindow
     // 可视区域宽度（由 Main.qml 传入并保持同步）
     property int viewportWidth: 0
     spacing: 16
@@ -71,7 +73,9 @@ Flow {
     }
 
     Components.EMusicPlayer {
-
+        id: musicPlayer
+        // 直接传递全局音乐窗口的打开方法（单参数：源组件）
+        openWindowHandler: musicAnimationWindow.openFrom
     }
 
     // 电量卡片

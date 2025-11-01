@@ -56,20 +56,21 @@ qt_add_qml_module(appEvolveUI
         components/EDrawer.qml
         components/EDropdown.qml
         components/EMusicPlayer.qml
+        components/MusicWindow.qml
         components/EFitnessProgress.qml
         components/EYearProgress.qml
         components/ENextHolidayCountdown.qml
         components/EClockCard.qml
         components/EHitokotoCard.qml
         components/EBatteryCard.qml
+        components/ESimpleDatePicker.qml
+        components/EAlertDialog.qml
+        components/ELoader.qml
         pages/BaseComponents.qml
         pages/NoBackgroundComponents.qml
         pages/OtherComponents.qml
-        QML_FILES components/ESimpleDatePicker.qml
         QML_FILES
-        QML_FILES components/EAlertDialog.qml
-        QML_FILES components/ELoader.qml
-
+        QML_FILES components/EAreaChart.qml
 )
 
 # ==========================

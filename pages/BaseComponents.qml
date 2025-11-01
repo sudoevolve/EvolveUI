@@ -240,8 +240,64 @@ Flow {
         }
     }
 
+    Rectangle {
+        width: parent.width
+        height: 50
+        color: "transparent"
+        // 分割占位
+        Text {
+            text: "📊图表组件："
+            anchors.verticalCenter: parent.verticalCenter
+            font.pixelSize: 20
+            font.bold: true
+            color: theme.textColor
+        }
+    }
+
+    Components.EAreaChart {
+        width: 830
+        height: 400
+        title: "这是标题"
+        subtitle: "这是描述，下面应该是每月数据"
+
+        dataSeries: [
+            {
+                name: "Mobile",
+                    color: Qt.lighter(theme.focusColor, 1.4),
+                data: [
+                    {month: "Jan", value: 120, label: "January"},
+                    {month: "Feb", value: 180, label: "February"},
+                    {month: "Mar", value: 237, label: "March"},
+                    {month: "Apr", value: 160, label: "April"},
+                    {month: "May", value: 90, label: "May"},
+                    {month: "Jun", value: 200, label: "June"}
+                ]
+            },
+            {
+                name: "Desktop",
+                color: theme.focusColor,
+                data: [
+                    {month: "Jan", value: 80, label: "January"},
+                    {month: "Feb", value: 120, label: "February"},
+                    {month: "Mar", value: 150, label: "March"},
+                    {month: "Apr", value: 110, label: "April"},
+                    {month: "May", value: 70, label: "May"},
+                    {month: "Jun", value: 140, label: "June"}
+                ]
+            }
+        ]
+
+        onPointClicked: function(index, dataPoint) {
+            console.log("点击数据点：", index, dataPoint.label, dataPoint.value)
+        }
+
+        onPointHovered: function(index, dataPoint) {
+            console.log("悬停数据点：", index, dataPoint.label, dataPoint.value)
+        }
+    }
+
     Components.EDataTable {
-        width: 850
+        width: 830
         height: 400
         selectable: true
 
@@ -307,6 +363,7 @@ Flow {
             Layout.leftMargin: 30
         }
     }
+
 
     Rectangle {
         width: parent.width

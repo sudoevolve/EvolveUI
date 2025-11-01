@@ -7,7 +7,7 @@ import QtQuick.Effects
 Rectangle {
     id: root
 
-    width: 660
+    width: 600
     height: 400
     color: "transparent"
     clip: false

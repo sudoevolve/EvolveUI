@@ -43,6 +43,7 @@ Item {
         Item {
             id: swipeContainer
             anchors.fill: parent
+            anchors.margins: -1
 
             SwipeView {
                 id: swipeView

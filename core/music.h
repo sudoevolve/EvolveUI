@@ -8,6 +8,8 @@
 #include <QStringList>
 #include <QUrl>
 #include <QMediaMetaData>
+#include <QTimer>
+#include <QFileSystemWatcher>
 
 class QMediaPlayer;
 class QAudioOutput;
@@ -76,9 +78,44 @@ public:
     Q_INVOKABLE QStringList scanMusicFiles(const QString &rootPath, bool recursive = true);
     Q_INVOKABLE QString defaultProjectRoot();
     Q_INVOKABLE QStringList scanDefaultProjectMusic(bool recursive = true);
+    
+    // 新增：Windows音乐文件夹支持
+    Q_INVOKABLE QString getWindowsMusicFolder();
+    Q_INVOKABLE QStringList scanWindowsMusic(bool recursive = true);
+    Q_INVOKABLE QStringList scanAllAvailableMusic(bool recursive = true);
+    
+    // 新增：文件监控功能
+    Q_INVOKABLE void startWatching();
+    Q_INVOKABLE void stopWatching();
+    Q_INVOKABLE bool isWatching() const;
+    
+    // 新增：缓存和性能优化
+    Q_INVOKABLE void clearCache();
+    Q_INVOKABLE int getCachedFileCount() const;
+    Q_INVOKABLE bool isValidMusicFile(const QString &filePath) const;
+
+signals:
+    void musicFilesChanged(const QStringList &newFiles);
+    void fileAdded(const QString &filePath);
+    void fileRemoved(const QString &filePath);
+
+private slots:
+    void onDirectoryChanged(const QString &path);
+    void onFileChanged(const QString &path);
+    void performDelayedScan();
 
 private:
     QString findProjectRootFromAppDir() const;
+    QStringList getValidMusicExtensions() const;
+    void addWatchPath(const QString &path);
+    void updateFileCache();
+    
+    QFileSystemWatcher *m_watcher;
+    QTimer *m_scanTimer;
+    QStringList m_cachedFiles;
+    QStringList m_watchedPaths;
+    bool m_isWatching;
+    static const int SCAN_DELAY_MS = 1000; // 延迟扫描避免频繁更新
 };
 
 #endif // CORE_MUSIC_H

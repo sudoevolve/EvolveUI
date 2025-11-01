@@ -250,9 +250,51 @@ Flow {
         }
     }
 
+    Rectangle {
+        width: parent.width
+        height: 50
+        color: "transparent"
+        // 分割占位
+        Text {
+            text: "📊图表组件："
+            anchors.verticalCenter: parent.verticalCenter
+            font.pixelSize: 20
+            font.bold: true
+            color: theme.textColor
+        }
+    }
+
+    Components.EAreaChart {
+        backgroundVisible: false
+        width: 830
+        height: 400
+        title: "无背景区域图表"
+        subtitle: "月度数据趋势展示"
+        dataPoints: [
+            { month: "1月", value: 120, label: "一月" },
+            { month: "2月", value: 190, label: "二月" },
+            { month: "3月", value: 300, label: "三月" },
+            { month: "4月", value: 500, label: "四月" },
+            { month: "5月", value: 200, label: "五月" },
+            { month: "6月", value: 300, label: "六月" },
+            { month: "7月", value: 450, label: "七月" },
+            { month: "8月", value: 380, label: "八月" },
+            { month: "9月", value: 420, label: "九月" },
+            { month: "10月", value: 350, label: "十月" },
+            { month: "11月", value: 280, label: "十一月" },
+            { month: "12月", value: 320, label: "十二月" }
+        ]
+        onPointClicked: function(index, dataPoint) {
+            console.log("点击了数据点:", index, dataPoint.label, dataPoint.value)
+        }
+        onPointHovered: function(index, dataPoint) {
+            console.log("悬停数据点：", index, dataPoint.label, dataPoint.value)
+        }
+    }
+
     Components.EDataTable {
         backgroundVisible: false
-        width: 850
+        width: 830
         height: 400
         selectable: true
 
@@ -298,7 +340,7 @@ Flow {
         width: 850
         title: "用户协议"
 
-        // 直接把你的组件放在这里ColumnLayout来自动排列
+        // 直接组件放这里ColumnLayout来自动排列
 
         Text {
             wrapMode: Text.WordWrap

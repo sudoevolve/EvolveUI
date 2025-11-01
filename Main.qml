@@ -517,6 +517,37 @@ ApplicationWindow {
         }
     }
 
+    // 全局音乐封面详情窗口（内容提取为独立组件）
+    Components.EAnimatedWindow {
+        id: musicAnimationWindow
+        fullscreenColor: theme.secondaryColor
+        textColor: theme.textColor
+
+        // 统一入口：从源组件读取音乐信息并打开动画窗口
+        function openFrom(sourceItem) {
+            if (sourceItem) {
+                musicContent.coverImage = sourceItem.coverImage || ""
+                musicContent.coverIsDefault = !!sourceItem.coverImageIsDefault
+                musicContent.title = sourceItem.songTitle || "未知歌曲"
+                musicContent.artist = sourceItem.artistName || "未知艺术家"
+            } else {
+                musicContent.coverImage = ""
+                musicContent.coverIsDefault = false
+                musicContent.title = "未知歌曲"
+                musicContent.artist = "未知艺术家"
+            }
+            musicContent.sourceItem = sourceItem || null
+            open(sourceItem)
+        }
+
+        // 提取后的内容组件（与 Aboutme 用法一致）
+        Components.MusicWindow {
+            id: musicContent
+            anchors.fill: parent
+            theme: theme
+        }
+    }
+
     } // end of contentWrapper
 
     // 右上角窗口控制按钮面板（移至文件末尾）

@@ -15,6 +15,8 @@ Rectangle {
     property string songTitle: "未知歌曲"
     property string artistName: "未知艺术家"
     property string coverImage: ""
+    // 当前封面是否为默认（无元数据）状态，用于效果切换
+    property bool coverImageIsDefault: false
     property bool isPlaying: false
     property real progress: 0.0  // 0.0 - 1.0
     property int duration: 0     // 总时长（秒）
@@ -26,6 +28,14 @@ Rectangle {
     
     // 自动读取元数据
     property bool autoReadMetadata: true
+    // 打开全局动画窗口的处理函数（由上层 Main.qml 传入）
+    property var openWindowHandler: null
+
+    // FontAwesome 字体用于默认音乐图标
+    FontLoader {
+        id: faSolid
+        source: "qrc:/new/prefix1/fonts/fontawesome-free-6.7.2-desktop/otfs/Font Awesome 6 Free-Solid-900.otf"
+    }
 
     signal playClicked()
     signal pauseClicked()
@@ -50,8 +60,17 @@ Rectangle {
         
         onCoverImageUrlChanged: {
             console.log("C++ 封面更新:", coverImageUrl)
-            // 为避免相同路径的图片被缓存，追加时间戳参数强制刷新
-            root.coverImage = coverImageUrl.toString() + "?t=" + Date.now()
+            // 移除时间戳，防止生成不可复用的纹理资源导致内存增长
+            const url = coverImageUrl.toString()
+            if (url.length === 0) {
+                // 无封面：标记默认并清空封面 URL（封面用图标显示）
+                root.coverImageIsDefault = true
+                root.coverImage = ""
+            } else {
+                root.coverImageIsDefault = false
+                // 由于 C++ 始终写入同一临时文件路径，如果不改变字符串，Image 可能复用首次的纹理
+                root.coverImage = url + "?v=" + Date.now()
+            }
         }
         
         onDurationChanged: {
@@ -63,6 +82,7 @@ Rectangle {
             console.log("C++ 元数据加载完成")
         }
     }
+
     
     // 媒体播放器
     MediaPlayer {
@@ -147,7 +167,7 @@ Rectangle {
     Item {
         id: backgroundContainer
         anchors.fill: parent
-        clip: true
+        clip: false  // 改为false，允许内容超出背景边界
 
         // 纯色背景（始终可见）
         Rectangle {
@@ -164,19 +184,23 @@ Rectangle {
         Image {
             id: backgroundAlbumCoverSource
             anchors.fill: parent
-            source: root.coverImage
+            // 无元数据时不加载壁纸，背景仍使用纯色叠加
+            source: root.coverImageIsDefault ? "" : root.coverImage
             fillMode: Image.PreserveAspectCrop
             cache: false
+            asynchronous: true
+            sourceSize: Qt.size(Math.round(width), Math.round(height))
             visible: false
             antialiasing: true
             smooth: true
+            mipmap: false
         }
 
         MultiEffect {
             id: backgroundAlbumCover
             source: backgroundAlbumCoverSource
-            anchors.fill: backgroundAlbumCoverSource
-            visible: root.coverImage !== "" && root.backgroundVisible
+            anchors.fill: backgroundContainer
+            visible: !root.coverImageIsDefault && root.coverImage !== "" && root.backgroundVisible
             
             // 模糊效果
             blurEnabled: true
@@ -189,6 +213,8 @@ Rectangle {
             // 圆角遮罩
             maskEnabled: true
             maskSource: backgroundMask
+            maskThresholdMin: 0.5
+            maskSpreadAtMin: 1.0
         }
 
         // 参考 EBlurCard：叠加半透明主题色，避免过亮/过透明
@@ -196,7 +222,7 @@ Rectangle {
             anchors.fill: parent
             anchors.margins: -0.5
             radius: root.radius
-            visible: root.coverImage !== "" && root.backgroundVisible
+            visible: !root.coverImageIsDefault && root.coverImage !== "" && root.backgroundVisible
             color: theme.blurOverlayColor
             z: 1
             opacity: 1.0
@@ -386,6 +412,22 @@ Rectangle {
             }
         }
 
+        // 点击整卡背景打开动画窗口（以整个组件为起点）
+        MouseArea {
+            id: cardClickArea
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: {
+                if (root.openWindowHandler) {
+                    // 统一为单参数：传入源组件
+                    root.openWindowHandler(root)
+                } else {
+                    console.warn("openWindowHandler 未设置：无法打开全屏窗口")
+                }
+            }
+        }
+
         // 阴影效果
         layer.enabled: root.shadowEnabled && root.backgroundVisible
         layer.effect: MultiEffect {
@@ -397,94 +439,89 @@ Rectangle {
         }
     }
 
+    // （已移除）局部 EAnimatedWindow，改为调用 Main.qml 全局窗口
+
     // === 布局 ===
     RowLayout {
         anchors.fill: parent
         anchors.margins: horizontalPadding
         spacing: 10
+        clip: false  // 确保布局不裁剪子元素
 
         // 封面图片 - 使用MultiEffect遮罩实现圆角
         Item {
             id: coverContainer
             width: root.itemHeight - 10
             height: root.itemHeight - 10
-            clip: true
+            clip: false  // 改为false，允许缩放时超出边界
 
             // 原始图像，隐藏
             Image {
                 id: coverSource
-                source: root.coverImage
+                // 默认封面时不加载壁纸，避免大图解码
+                source: root.coverImageIsDefault ? "" : root.coverImage
                 anchors.fill: parent
                 fillMode: Image.PreserveAspectCrop
                 cache: false
+                asynchronous: true
+                sourceSize: Qt.size(Math.round(width), Math.round(height))
                 visible: false
                 antialiasing: true
                 smooth: true
-                mipmap: true
+                mipmap: false
+            }
+
+            // 默认封面：使用音乐图标而非壁纸
+            Item {
+                id: defaultCoverSource
+                anchors.fill: parent
+                visible: false
+                // 背景色以主题次级色填充，避免透明
+                Rectangle {
+                    anchors.fill: parent
+                    color: theme.secondaryColor
+                    antialiasing: true
+                    smooth: true
+                }
+                // 音乐图标（FontAwesome）
+                Text {
+                    anchors.centerIn: parent
+                    text: "\uf001" // fa-music
+                    font.family: faSolid.name
+                    font.pixelSize: Math.round(Math.min(defaultCoverSource.width, defaultCoverSource.height) * 0.6)
+                    color: theme.textColor
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
             }
 
             // MultiEffect 遮罩效果
             MultiEffect {
                 id: coverEffect
-                source: coverSource
-                anchors.fill: coverSource
+                source: root.coverImageIsDefault ? defaultCoverSource : coverSource
+                anchors.fill: coverContainer
                 maskEnabled: true
                 maskSource: coverMask
                 autoPaddingEnabled: false
                 antialiasing: true
-                layer.enabled: true
+                maskThresholdMin: 0.5
+                maskSpreadAtMin: 0.5
+                
+                // 动态启用抗锯齿图层，仅在播放时生效
+                layer.enabled: root.isPlaying
                 layer.smooth: true
-                layer.samples: 8
-
-                // 轻微晃动（旋转 + 缩放）
-                transform: [
-                    Rotation {
-                        id: coverRot
-                        origin.x: coverEffect.width / 2
-                        origin.y: coverEffect.height / 2
-                        angle: 0
-                    },
-                    Scale {
-                        id: coverScale
-                        origin.x: coverEffect.width / 2
-                        origin.y: coverEffect.height / 2
-                        xScale: 1.0
-                        yScale: 1.0
-                    }
-                ]
-
-                // 旋转来回摆动
-                SequentialAnimation {
-                    id: wobbleRot
-                    running: root.isPlaying
-                    loops: Animation.Infinite
-                    NumberAnimation { target: coverRot; property: "angle"; to: 1.5; duration: 1400; easing.type: Easing.InOutSine }
-                    NumberAnimation { target: coverRot; property: "angle"; to: -1.5; duration: 1400; easing.type: Easing.InOutSine }
-                }
-
-                // 缩放轻微脉动
-                SequentialAnimation {
-                    id: wobbleScale
-                    running: root.isPlaying
-                    loops: Animation.Infinite
-                    ParallelAnimation {
-                        NumberAnimation { target: coverScale; property: "xScale"; to: 1.005; duration: 1400; easing.type: Easing.InOutSine }
-                        NumberAnimation { target: coverScale; property: "yScale"; to: 1.005; duration: 1400; easing.type: Easing.InOutSine }
-                    }
-                    ParallelAnimation {
-                        NumberAnimation { target: coverScale; property: "xScale"; to: 0.995; duration: 1400; easing.type: Easing.InOutSine }
-                        NumberAnimation { target: coverScale; property: "yScale"; to: 0.995; duration: 1400; easing.type: Easing.InOutSine }
-                    }
-                }
+                layer.samples: 4
+                // 图层纹理尺寸严格匹配显示尺寸，避免二次缩放
+                layer.textureSize: Qt.size(Math.round(width), Math.round(height))
             }
 
             // 圆角遮罩
         Item {
             id: coverMask
-            anchors.fill: coverSource
+            anchors.fill: coverContainer
             layer.enabled: true
             layer.smooth: true
-            layer.samples: 4
+            layer.mipmap: false
             visible: false
 
                 Rectangle {
@@ -496,17 +533,7 @@ Rectangle {
                 }
             }
 
-            // 播放状态变化时复位晃动
-            Connections {
-                target: root
-                function onIsPlayingChanged() {
-                    if (!root.isPlaying) {
-                        coverRot.angle = 0
-                        coverScale.xScale = 1.0
-                        coverScale.yScale = 1.0
-                    }
-                }
-            }
+            // 已移除封面摇晃效果
 
             // 播放状态指示
             Rectangle {
@@ -525,6 +552,21 @@ Rectangle {
                     radius: 4
                     color: "white"
                     antialiasing: true
+                }
+            }
+
+            // 点击打开动画窗口
+            MouseArea {
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    if (root.openWindowHandler) {
+                        // 统一为单参数：传入源组件
+                        root.openWindowHandler(root)
+                    } else {
+                        console.warn("openWindowHandler 未设置：无法打开全屏窗口")
+                    }
                 }
             }
         }
@@ -926,6 +968,72 @@ Rectangle {
                         }
                     }
                 }
+
+                // 刷新按钮
+                Text {
+                    id: refreshButton
+                    text: "\uf021" // FontAwesome 刷新图标
+                    font.family: iconFont.name
+                    font.pixelSize: root.itemIconSize - 2
+                    color: refreshArea.pressed ? theme.focusColor : theme.textColor
+                    verticalAlignment: Text.AlignVCenter
+                    opacity: 0.8
+
+                    // 旋转变换
+                    transform: Rotation {
+                        id: refreshRotationTransform
+                        origin.x: refreshButton.width / 2
+                        origin.y: refreshButton.height / 2
+                        angle: 0
+                    }
+
+                    MouseArea {
+                        id: refreshArea
+                        anchors.fill: parent
+                        anchors.margins: -5
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            console.log("手动刷新音乐列表")
+                            refreshRotationAnimation.start()
+                            loadProjectPlaylist()
+                        }
+
+                        // 缩放效果
+                        onPressed: {
+                            parent.scale = root.pressedScale
+                        }
+                        onReleased: {
+                            parent.scale = 1.0
+                        }
+                        onCanceled: {
+                            parent.scale = 1.0
+                        }
+                    }
+
+                    Behavior on scale {
+                        NumberAnimation { duration: 100 }
+                    }
+
+                    // 旋转动画
+                    SequentialAnimation {
+                        id: refreshRotationAnimation
+                        
+                        NumberAnimation {
+                            target: refreshRotationTransform
+                            property: "angle"
+                            from: 0
+                            to: 360
+                            duration: 600
+                            easing.type: Easing.OutCubic
+                        }
+                        
+                        // 重置角度
+                        ScriptAction {
+                            script: refreshRotationTransform.angle = 0
+                        }
+                    }
+                }
+
             }
         }
     }
@@ -961,10 +1069,64 @@ Rectangle {
     property int currentIndex: 0
     ListModel { id: playlistModel }
 
-    MusicLibrary { id: musicLibrary }
+    MusicLibrary { 
+        id: musicLibrary 
+        
+        // 连接新的信号，实现自动更新播放列表
+        onMusicFilesChanged: function(newFiles) {
+            console.log("检测到音乐文件变化，更新播放列表")
+            updatePlaylistFromFiles(newFiles)
+        }
+        
+        onFileAdded: function(filePath) {
+            console.log("新增音乐文件:", filePath)
+            // 可以在这里添加单个文件到播放列表
+        }
+        
+        onFileRemoved: function(filePath) {
+            console.log("删除音乐文件:", filePath)
+            // 检查当前播放的文件是否被删除
+            if (root.source === filePath) {
+                console.log("当前播放的文件被删除，停止播放")
+                mediaPlayer.stop()
+                root.source = ""
+                root.songTitle = "未知歌曲"
+                root.artistName = "未知艺术家"
+                root.coverImage = ""
+                
+                // 尝试播放下一首
+                if (playlistModel.count > 1) {
+                    playNext()
+                }
+            }
+            
+            // 从播放列表中移除该文件
+            for (var i = 0; i < playlistModel.count; i++) {
+                if (playlistModel.get(i).source === filePath) {
+                    console.log("从播放列表移除文件，索引:", i)
+                    playlistModel.remove(i)
+                    
+                    // 调整当前索引
+                    if (i <= currentIndex && currentIndex > 0) {
+                        currentIndex--
+                    }
+                    break
+                }
+            }
+        }
+    }
 
     function loadProjectPlaylist() {
-        const files = musicLibrary.scanDefaultProjectMusic(true)
+        // 使用新的API，优先读取项目音乐，如果没有则读取Windows音乐文件夹
+        const files = musicLibrary.scanAllAvailableMusic(true)
+        updatePlaylistFromFiles(files)
+        
+        // 启动文件监控
+        musicLibrary.startWatching()
+        console.log("已启动音乐文件监控，监控状态:", musicLibrary.isWatching())
+    }
+    
+    function updatePlaylistFromFiles(files) {
         playlistModel.clear()
         for (var i = 0; i < files.length; i++) {
             playlistModel.append({ source: files[i] })
@@ -973,15 +1135,37 @@ Rectangle {
             currentIndex = 0
             root.source = playlistModel.get(0).source
             console.log("已加载播放列表，共", playlistModel.count, "首：", root.source)
+            console.log("缓存文件数量:", musicLibrary.getCachedFileCount())
         } else {
-            console.warn("项目根目录未找到音乐文件")
+            console.warn("未找到音乐文件（项目根目录和Windows音乐文件夹）")
         }
     }
 
     function playAt(index) {
         if (index >= 0 && index < playlistModel.count) {
             currentIndex = index
-            root.source = playlistModel.get(index).source
+            var newSource = playlistModel.get(index).source
+            
+            // 检查文件是否存在
+            if (musicLibrary.isValidMusicFile && !musicLibrary.isValidMusicFile(newSource)) {
+                console.warn("尝试播放不存在的文件:", newSource)
+                // 从播放列表中移除无效文件
+                playlistModel.remove(index)
+                
+                // 尝试播放下一首
+                if (playlistModel.count > 0) {
+                    var nextIndex = index >= playlistModel.count ? 0 : index
+                    playAt(nextIndex)
+                }
+                return
+            }
+            
+            // 切换前停止播放并清理封面，释放旧纹理
+            mediaPlayer.stop()
+            root.coverImage = ""
+
+            // 设置新音源并开始播放
+            root.source = newSource
             mediaPlayer.play()
         }
     }

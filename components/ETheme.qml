@@ -23,7 +23,7 @@ QtObject {
     property color focusColor: defaultFocusColor
 
     // === 全局音量（0.0 - 1.0），用于 EMusicPlayer 绑定 ===
-    property real musicVolume: 1.0
+    property real musicVolume: 0.2
 
     // === 阴影统一样式 ===
     property color shadowColor: isDark ? "#80000000" : "#40000000"

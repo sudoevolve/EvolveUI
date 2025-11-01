@@ -24,6 +24,7 @@ EvolveUI 是一个现代化、高度风格统一的 Qt6 QML 前端组件库，�
 | `EAccordion.qml`       | 下拉信息栏                             |
 | `EAnimatedWindow.qml`  | iPad os动画风格窗口组件                 |
 | `EAvatar.qml`          | 头像组件                               |
+| `EAreaChart.qml`       | 折线图组件                              |
 | `EBatteryCard.qml`     | 电池状态卡片组件                        |
 | `EBlurCard.qml`        | 高斯模糊卡片组件                        |
 | `EButton.qml`          | 带图标 + 动画的圆角按钮组件              |
