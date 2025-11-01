@@ -46,7 +46,7 @@ Item {
         visible: false
         source: coverIsDefault ? "" : coverImage
         fillMode: Image.PreserveAspectCrop
-        cache: true
+        cache: false
         asynchronous: false
         antialiasing: true
         smooth: true
@@ -122,7 +122,7 @@ Item {
             anchors.fill: parent
             source: coverImage
             fillMode: Image.PreserveAspectCrop
-            cache: true
+            cache: false
             asynchronous: false
             visible: false
             antialiasing: true
