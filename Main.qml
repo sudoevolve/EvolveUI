@@ -43,9 +43,8 @@ ApplicationWindow {
         source: theme.backgroundImage
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
-        sourceSize.width: root.width
-        sourceSize.height: root.height
-        cache: false
+        cache: true
+        smooth: true
         transformOrigin: Item.Center
         scale: root.anyAnimatedWindowOpen ? 1.2 : 1.0
         Behavior on scale { NumberAnimation { duration: 300; easing.type: Easing.OutQuad  } }
