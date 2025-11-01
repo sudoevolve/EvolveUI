@@ -28,7 +28,7 @@ EvolveUI 是一个现代化、高度风格统一的 Qt6 QML 前端组件库，�
   <img src="./preview/5.png" width="45%" alt="预览图4"/>
 </div>
 
-> 更多组件效果请查看 [视频演示](https://www.bilibili.com/video/BV1JQ1uBBEPy/?vd_source=41bd5c69bc7cc80ada0803d85aba4d33#reply281100795376)
+> 更多组件效果请查看 [视频演示](https://www.bilibili.com/video/BV1JQ1uBBEPy)
 
 ## 📦 已实现组件（完整）
 
