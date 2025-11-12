@@ -132,13 +132,13 @@ Flow {
         // 占位用，制造空白
     }
 
-
+/*占用gpu过高
     Components.ELoader {
         size: 50
         x: 150
         speed: 0.8
     }
-
+*/
 
     Rectangle {
         width: parent.width
