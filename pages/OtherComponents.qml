@@ -118,6 +118,13 @@ Flow {
         }
     }
 
+    Components.EColorPicker {
+        id: colorPicker
+        onActiveDragChanged: (active) => {
+            flickable.interactive = !active
+        }
+    }
+
     Rectangle {
         width: parent.width
         height: 150
