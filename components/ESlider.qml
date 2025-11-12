@@ -44,6 +44,7 @@ Rectangle {
     property bool isPressed: false
     property bool hovered: false
     property bool _syncing: false
+    property bool _ready: false
 
     color: "transparent"
     implicitWidth: 320
@@ -81,7 +82,12 @@ Rectangle {
     }
 
     onValueChanged: _updateHandlePosition()
-    Component.onCompleted: _updateHandlePosition()
+    Component.onCompleted: {
+        // 先把 SpinBox 的值同步为外部设定的 value，再标记就绪，避免初始化过程中覆盖 value
+        valueLabel.value = Math.round(root.value * root._scale)
+        _ready = true
+        _updateHandlePosition()
+    }
 
     // === 背景阴影 ===
     MultiEffect {
@@ -101,7 +107,8 @@ Rectangle {
         anchors.fill: parent
         radius: root.radius
         color: root.backgroundVisible ? trackColor : "transparent"
-        border.color: borderColor
+        // 无背景时：选中用主题高亮色，未选中用次级色
+        border.color: root.backgroundVisible ? borderColor : (focused ? theme.focusColor : theme.textColor)
         border.width: focused ? 2 : 1
     }
 
@@ -142,7 +149,12 @@ Rectangle {
                 width: handle.x + handle.width / 2
                 radius: height / 2
                 color: fillColor
-                Behavior on width { SmoothedAnimation { duration: 100 } }
+                antialiasing: true
+                smooth: true
+                Behavior on width {
+                    enabled: root.isPressed
+                    NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
+                }
             }
 
             // 滑块
@@ -231,7 +243,6 @@ Rectangle {
             stepSize: Math.max(1, Math.round(root.stepSize * root._scale))
             width: implicitWidth  // 使用实际内容宽度而不是固定宽度
             validator: DoubleValidator { bottom: root.minimumValue; top: root.maximumValue; decimals: root.decimals }
-            Component.onCompleted: valueLabel.value = Math.round(root.value * root._scale)
             Connections {
                 target: root
                 function onValueChanged() {
@@ -252,7 +263,8 @@ Rectangle {
             valueFromText: function(t) {
                 var cleaned = t.replace(root.valueSuffix, "").trim();
                 var num = parseFloat(cleaned);
-                if (isNaN(num)) return Math.round(root.value * root._scale);
+                // 空/无效输入回退到最小值；0 是有效值
+                if (isNaN(num)) return from;
                 var scaled = Math.round(num * root._scale);
                 return Math.max(from, Math.min(to, scaled));
             }
@@ -286,15 +298,23 @@ Rectangle {
                     // 非编辑状态下从值刷新文本；编辑时不打断用户输入
                     Binding { target: textItem; property: "text"; value: valueLabel.textFromValue(valueLabel.value); when: !textItem.activeFocus }
                     onEditingFinished: valueLabel.value = valueLabel.valueFromText(text)
+                    // 文本编辑获得/失去焦点时，同步组件焦点以驱动主题高亮
+                    onActiveFocusChanged: root.focused = activeFocus
                     Keys.onReturnPressed: valueLabel.value = valueLabel.valueFromText(text)
                     Keys.onEnterPressed: valueLabel.value = valueLabel.valueFromText(text)
                     Keys.onUpPressed: {
                         valueLabel.increase()
                         textItem.text = valueLabel.textFromValue(valueLabel.value)
+                        // 加减也触发高亮反馈
+                        root.focused = true
+                        focusFlashReset.restart()
                     }
                     Keys.onDownPressed: {
                         valueLabel.decrease()
                         textItem.text = valueLabel.textFromValue(valueLabel.value)
+                        // 加减也触发高亮反馈
+                        root.focused = true
+                        focusFlashReset.restart()
                     }
                 }
             }
@@ -304,15 +324,39 @@ Rectangle {
 
             // 右侧上下箭头胶囊
             up.indicator: Rectangle {
+                id: upIndicatorRect
                 width: 24
                 height: 16
                 radius: 6
-                color: root.backgroundVisible ? Qt.rgba(0.9, 0.9, 0.9, 0.12) : "transparent"
-                border.color: root.backgroundVisible ? theme.getBorderColor(false) : "transparent"
+                // 颜色状态
+                property color normalFillColor: root.backgroundVisible ? Qt.rgba(0.9, 0.9, 0.9, 0.12) : "transparent"
+                property color hoverFillColor: root.backgroundVisible ? Qt.rgba(0.9, 0.9, 0.9, 0.20) : "transparent"
+                property color pressedFillColor: Qt.tint(theme.focusColor, "#22ffffff")
+                property color currentFillColor: normalFillColor
+                property color normalBorderColor: root.backgroundVisible ? theme.getBorderColor(false) : "transparent"
+                property color hoverBorderColor: root.backgroundVisible ? theme.getBorderColor(true) : "transparent"
+                property color pressedBorderColor: theme.focusColor
+                property color currentBorderColor: normalBorderColor
+                color: currentFillColor
+                border.color: currentBorderColor
+                Behavior on color { ColorAnimation { duration: 120 } }
+                Behavior on border.color { ColorAnimation { duration: 120 } }
                 anchors.right: parent.right
                 anchors.top: parent.top
                 anchors.rightMargin: 0
-                anchors.topMargin: 0
+                // 轻微位移与回弹缩放
+                property real pressOffset: 0
+                Behavior on pressOffset { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+                transform: [
+                    Scale {
+                        id: upIndicatorScale
+                        origin.x: width / 2
+                        origin.y: height / 2
+                        Behavior on xScale { SpringAnimation { spring: 2.2; damping: 0.28 } }
+                        Behavior on yScale { SpringAnimation { spring: 2.2; damping: 0.28 } }
+                    },
+                    Translate { y: upIndicatorRect.pressOffset }
+                ]
                 Text {
                     anchors.centerIn: parent
                     text: "\uf077" // chevron-up
@@ -323,22 +367,76 @@ Rectangle {
                 MouseArea {
                     anchors.fill: parent
                     hoverEnabled: true
+                    onPressed: {
+                        upIndicatorScale.xScale = 1.0
+                        upIndicatorScale.yScale = 0.94
+                        parent.pressOffset = -2
+                        parent.currentFillColor = parent.pressedFillColor
+                        parent.currentBorderColor = parent.pressedBorderColor
+                    }
+                    onReleased: {
+                        upIndicatorScale.xScale = 1.0
+                        upIndicatorScale.yScale = 1.0
+                        parent.pressOffset = 0
+                        if (containsMouse) {
+                            parent.currentFillColor = parent.hoverFillColor
+                            parent.currentBorderColor = parent.hoverBorderColor
+                        } else {
+                            parent.currentFillColor = parent.normalFillColor
+                            parent.currentBorderColor = parent.normalBorderColor
+                        }
+                    }
+                    onEntered: {
+                        parent.currentFillColor = parent.hoverFillColor
+                        parent.currentBorderColor = parent.hoverBorderColor
+                    }
+                    onExited: {
+                        parent.currentFillColor = parent.normalFillColor
+                        parent.currentBorderColor = parent.normalBorderColor
+                    }
                     onClicked: {
                         textItem.focus = false
                         valueLabel.increase()
+                        // 加按钮触发高亮反馈
+                        root.focused = true
+                        focusFlashReset.restart()
                     }
                 }
             }
             down.indicator: Rectangle {
+                id: downIndicatorRect
                 width: 24
                 height: 16
                 radius: 6
-                color: root.backgroundVisible ? Qt.rgba(0.9, 0.9, 0.9, 0.12) : "transparent"
-                border.color: root.backgroundVisible ? theme.getBorderColor(false) : "transparent"
+                // 颜色状态
+                property color normalFillColor: root.backgroundVisible ? Qt.rgba(0.9, 0.9, 0.9, 0.12) : "transparent"
+                property color hoverFillColor: root.backgroundVisible ? Qt.rgba(0.9, 0.9, 0.9, 0.20) : "transparent"
+                property color pressedFillColor: Qt.tint(theme.focusColor, "#22ffffff")
+                property color currentFillColor: normalFillColor
+                property color normalBorderColor: root.backgroundVisible ? theme.getBorderColor(false) : "transparent"
+                property color hoverBorderColor: root.backgroundVisible ? theme.getBorderColor(true) : "transparent"
+                property color pressedBorderColor: theme.focusColor
+                property color currentBorderColor: normalBorderColor
+                color: currentFillColor
+                border.color: currentBorderColor
+                Behavior on color { ColorAnimation { duration: 120 } }
+                Behavior on border.color { ColorAnimation { duration: 120 } }
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
                 anchors.rightMargin: 0
-                anchors.bottomMargin: 0
+                // 轻微位移与回弹缩放
+                property real pressOffset: 0
+                Behavior on pressOffset { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+                transform: [
+                    Scale {
+                        id: downIndicatorScale
+                        origin.x: width / 2
+                        origin.y: height / 2
+                        Behavior on xScale { SpringAnimation { spring: 2.2; damping: 0.28 } }
+                        Behavior on yScale { SpringAnimation { spring: 2.2; damping: 0.28 } }
+                    },
+                    Translate { y: downIndicatorRect.pressOffset }
+                ]
                 Text {
                     anchors.centerIn: parent
                     text: "\uf078" // chevron-down
@@ -349,21 +447,57 @@ Rectangle {
                 MouseArea {
                     anchors.fill: parent
                     hoverEnabled: true
+                    onPressed: {
+                        downIndicatorScale.xScale = 1.0
+                        downIndicatorScale.yScale = 0.94
+                        parent.pressOffset = 2
+                        parent.currentFillColor = parent.pressedFillColor
+                        parent.currentBorderColor = parent.pressedBorderColor
+                    }
+                    onReleased: {
+                        downIndicatorScale.xScale = 1.0
+                        downIndicatorScale.yScale = 1.0
+                        parent.pressOffset = 0
+                        if (containsMouse) {
+                            parent.currentFillColor = parent.hoverFillColor
+                            parent.currentBorderColor = parent.hoverBorderColor
+                        } else {
+                            parent.currentFillColor = parent.normalFillColor
+                            parent.currentBorderColor = parent.normalBorderColor
+                        }
+                    }
+                    onEntered: {
+                        parent.currentFillColor = parent.hoverFillColor
+                        parent.currentBorderColor = parent.hoverBorderColor
+                    }
+                    onExited: {
+                        parent.currentFillColor = parent.normalFillColor
+                        parent.currentBorderColor = parent.normalBorderColor
+                    }
                     onClicked: {
                         textItem.focus = false
                         valueLabel.decrease()
+                        // 减按钮触发高亮反馈
+                        root.focused = true
+                        focusFlashReset.restart()
                     }
                 }
             }
 
             // 数值同步到外部 value
             onValueChanged: {
+                if (!root._ready) return; // 初始化阶段不回推到 root.value，避免默认值覆盖外部初始值
                 var newReal = value / root._scale;
                 if (!root._syncing && newReal !== root.value) {
                     root._syncing = true;
                     root.value = newReal;
                     root._syncing = false;
                     userValueChanged(root.value);
+                }
+                // 非拖动场景下，给一次短暂的高亮反馈
+                if (!root.isPressed && !valueLabel.activeFocus) {
+                    root.focused = true
+                    focusFlashReset.restart()
                 }
             }
         }
@@ -381,6 +515,18 @@ Rectangle {
                 var realVal = root.value;
                 var txt = (root.decimals === 0 ? Math.round(realVal).toString() : realVal.toFixed(root.decimals));
                 return txt + root.valueSuffix;
+            }
+        }
+    }
+
+    // 非拖动情况下的短暂高亮复位（确保“直接输入/加减按钮”也有统一的变色反馈）
+    Timer {
+        id: focusFlashReset
+        interval: 300
+        repeat: false
+        onTriggered: {
+            if (!root.isPressed && !valueLabel.activeFocus) {
+                root.focused = false
             }
         }
     }

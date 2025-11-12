@@ -868,13 +868,13 @@ Item {
                 color: theme ? Qt.rgba(theme.textColor.r, theme.textColor.g, theme.textColor.b, 0.25) : Qt.rgba(255,255,255,0.25)
                 antialiasing: true
                 smooth: true
+                property bool dragging: false
 
                 // 当前进度比例（优先使用 sourceItem.progress）
                 readonly property real ratio: (sourceItem && typeof sourceItem.progress === "number") ? Math.max(0, Math.min(1, sourceItem.progress)) : ((sourceItem && sourceItem.duration > 0) ? Math.max(0, Math.min(1, sourceItem.position / sourceItem.duration)) : 0)
 
-                // 已播放填充
                 Rectangle {
-                    id: progressFill
+                    id: progressFillColor
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
                     width: parent.width * progressTrack.ratio
@@ -883,99 +883,49 @@ Item {
                     color: theme ? theme.focusColor : "#00C4B3"
                     antialiasing: true
                     smooth: true
-                    // 避免窗口初次打开时从0到当前位置的跳变，只在拖动时动画
-                    Behavior on width {
-                        enabled: progressArea && progressArea.pressed
-                        NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
-                    }
                 }
 
-                // 拖动柄
                 Rectangle {
-                    id: progressHandle
-                    width: 14
-                    height: 14
-                    radius: 7
-                    x: Math.max(0, Math.min(progressTrack.width - width, progressFill.width - width / 2))
-                    y: progressTrack.height / 2 - height / 2
+                    id: handleDot
+                    width: 12
+                    height: 12
+                    radius: 6
                     color: theme ? theme.focusColor : "#00C4B3"
-                    border.color: theme ? Qt.rgba(theme.textColor.r, theme.textColor.g, theme.textColor.b, 0.35) : Qt.rgba(255,255,255,0.35)
+                    border.color: theme ? Qt.lighter(theme.focusColor, 1.4) : Qt.rgba(0, 196, 179, 1)
                     border.width: 1
                     antialiasing: true
                     smooth: true
-                    opacity: 0.95
+                    z: 2
+                    anchors.verticalCenter: progressTrack.verticalCenter
+                    x: Math.max(0, Math.min(progressTrack.width, progressTrack.width * progressTrack.ratio)) - width / 2
+                    opacity: (progressArea.containsMouse || progressTrack.dragging) ? 1.0 : 0.0
+                    scale: (progressArea.containsMouse || progressTrack.dragging) ? 1.15 : 1.0
+                    transformOrigin: Item.Center
+                    Behavior on scale { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
                 }
 
-                // 脉冲光效层：拖动时在拖动柄周围扩散环形光
-                Item {
-                    id: pulseLayer
-                    anchors.centerIn: progressHandle
-                    width: progressHandle.width
-                    height: width
-                    visible: progressArea.pressed
-                    z: -0.1
-                    clip: false
-                    property color glowColor: theme ? Qt.rgba(theme.focusColor.r, theme.focusColor.g, theme.focusColor.b, 0.40) : Qt.rgba(0, 196, 179, 0.40)
+                
 
-                    Repeater {
-                        model: 3
-                        Rectangle {
-                            id: ring
-                            anchors.centerIn: parent
-                            width: parent.width
-                            height: width
-                            radius: width / 2
-                            color: "transparent"
-                            border.color: pulseLayer.glowColor
-                            border.width: 2
-                            antialiasing: true
-                            smooth: true
-                            opacity: 0.0
-
-                            transform: Scale {
-                                id: ringScale
-                                origin.x: ring.width / 2
-                                origin.y: ring.height / 2
-                                xScale: 0.6
-                                yScale: 0.6
-                            }
-
-                            SequentialAnimation on opacity {
-                                running: pulseLayer.visible
-                                loops: Animation.Infinite
-                                PauseAnimation { duration: index * 180 }
-                                NumberAnimation { to: 0.6; duration: 140; easing.type: Easing.OutQuad }
-                                NumberAnimation { to: 0.0; duration: 900; easing.type: Easing.InQuad }
-                            }
-
-                            SequentialAnimation {
-                                running: pulseLayer.visible
-                                loops: Animation.Infinite
-                                PauseAnimation { duration: index * 180 }
-                                ParallelAnimation {
-                                    NumberAnimation { target: ringScale; property: "xScale"; from: 0.6; to: 2.0; duration: 1040; easing.type: Easing.OutCubic }
-                                    NumberAnimation { target: ringScale; property: "yScale"; from: 0.6; to: 2.0; duration: 1040; easing.type: Easing.OutCubic }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 交互：拖动与点击设置进度
                 MouseArea {
                     id: progressArea
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onPressed: function(mouse) {
-                        var r = Math.max(0, Math.min(1, mouse.x / progressTrack.width))
+                    function setProgressAt(px) {
+                        var r = Math.max(0, Math.min(1, px / progressTrack.width))
                         if (sourceItem && sourceItem.seekPositionChanged) sourceItem.seekPositionChanged(r)
                     }
+                    onPressed: function(mouse) {
+                        progressTrack.dragging = true
+                        setProgressAt(mouse.x)
+                    }
                     onPositionChanged: function(mouse) {
-                        if (pressed) {
-                            var r = Math.max(0, Math.min(1, mouse.x / progressTrack.width))
-                            if (sourceItem && sourceItem.seekPositionChanged) sourceItem.seekPositionChanged(r)
-                        }
+                        if (pressed) setProgressAt(mouse.x)
+                    }
+                    onReleased: function(mouse) {
+                        setProgressAt(mouse.x)
+                        progressTrack.dragging = false
+                        progressFillColor.opacity = 0.7
                     }
                 }
             }

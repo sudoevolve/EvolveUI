@@ -397,7 +397,7 @@ Rectangle {
         }
     }
 
-    // （已移除）局部 EAnimatedWindow，改为调用 Main.qml 全局窗口
+
 
     // === 布局 ===
     RowLayout {
@@ -567,135 +567,72 @@ Rectangle {
                     color: Qt.rgba(theme.textColor.r, theme.textColor.g, theme.textColor.b, 0.2)
                     antialiasing: true
                     smooth: true
-                    property bool hovering: false
                     property bool dragging: false
-                    property real uiProgress: root.progress
 
-                    Timer {
-                        id: progressUiTimer
-                        interval: 100
-                        repeat: true
-                        running: true
-                        onTriggered: progressTrack.uiProgress = progressTrack.uiProgress + (root.progress - progressTrack.uiProgress) * 0.5
-                    }
+                // 填充条：直接绑定到 root.progress，避免中间变量和定时器
+                Rectangle {
+                    id: progressFillColor
+                    width: progressTrack.width * root.progress
+                    height: progressTrack.height
+                    anchors.verticalCenter: progressTrack.verticalCenter
+                    color: theme.focusColor
+                    radius: progressTrack.height / 2
+                    antialiasing: true
+                    smooth: true
+                }
 
-                    // 进度填充容器（用于遮罩裁剪）
-                        Item {
-                            id: fillContainer
-                        width: progressTrack.width * progressTrack.uiProgress
-                        height: progressTrack.height
-                        anchors.verticalCenter: progressTrack.verticalCenter
-                        z: 1
+                Rectangle {
+                    id: handleDot
+                    width: 12
+                    height: 12
+                    radius: 6
+                    color: theme.focusColor
+                    border.color: Qt.lighter(theme.focusColor, 1.4)
+                    border.width: 1
+                    antialiasing: true
+                    smooth: true
+                    z: 2
+                    anchors.verticalCenter: progressTrack.verticalCenter
+                    x: Math.max(0, Math.min(progressTrack.width, progressTrack.width * root.progress)) - width / 2
+                    opacity: (progressArea.containsMouse || progressTrack.dragging) ? 1.0 : 0.0
+                    scale: (progressArea.containsMouse || progressTrack.dragging) ? 1.15 : 1.0
+                    transformOrigin: Item.Center
 
-                        // 原始填充色
-                        Rectangle {
-                            id: progressFillColor
-                            anchors.fill: parent
-                            color: theme.focusColor
-                            radius: progressTrack.height / 2
-                            antialiasing: true
-                            smooth: true
-                        }
-
-                        // 遮罩形状（圆角胶囊）
-                        
-
-                        Behavior on width { enabled: progressTrack.dragging; NumberAnimation { duration: 100 } }
-                    }
-
-                    // 可拖动圆点
-                        Rectangle {
-                            id: handleDot
-                        width: 12
-                        height: 12
-                        radius: 6
-                        color: theme.focusColor
-                        border.color: Qt.lighter(theme.focusColor, 1.4)
-                        border.width: 1
-                        antialiasing: true
-                        smooth: true
-                        z: 2
-                        anchors.verticalCenter: progressTrack.verticalCenter
-                        x: Math.max(0, Math.min(progressTrack.width, progressTrack.width * progressTrack.uiProgress)) - width / 2
-                        opacity: (progressArea.containsMouse || progressTrack.dragging) ? 1.0 : 0.0
-                        // 回弹动画使用的缩放系数
-                        property real animScale: 1.0
-                        // 基础缩放（按下略微放大，悬停/拖动显示）
-                        property real baseScale: progressArea.pressed ? 1.15 : 1.0
-                        scale: (progressArea.containsMouse || progressTrack.dragging) ? animScale * baseScale : 0.0
-
-                        Behavior on x { NumberAnimation { duration: 80 } }
-                        Behavior on opacity { NumberAnimation { duration: 120 } }
-                        Behavior on scale { enabled: !handleBounce.running; NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
-                    }
-
-                    // 轨道发光层（短暂脉冲）
-                    Rectangle {
-                        id: trackGlow
-                        anchors.fill: fillContainer
-                        anchors.margins: -1
-                        radius: progressTrack.height / 2
-                        color: theme.focusColor
-                        opacity: 0.0
-                        z: 1.5
-                        antialiasing: true
-                        smooth: true
-                    }
-
-                    // 圆点轻微回弹动画（释放时）
-                    PropertyAnimation {
-                        id: handleBounce
-                        target: handleDot
-                        property: "animScale"
-                        from: 1.2
-                        to: 1.0
-                        duration: 180
-                        easing.type: Easing.OutBack
-                    }
-
-                    // 轨道发光脉冲动画（释放时）
-                    SequentialAnimation {
-                        id: glowAnim
-                        running: false
-                        NumberAnimation { target: trackGlow; property: "opacity"; to: 0.28; duration: 120; easing.type: Easing.OutQuad }
-                        NumberAnimation { target: trackGlow; property: "opacity"; to: 0.0; duration: 220; easing.type: Easing.InQuad }
-                    }
-
-                    // 悬停与拖动交互
-                    MouseArea {
-                        id: progressArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-
-                        function setProgressAt(px) {
-                            var newProgress = Math.max(0, Math.min(1, px / progressTrack.width))
-                            root.progress = newProgress
-                            mediaPlayer.position = newProgress * mediaPlayer.duration
-                            root.seekPositionChanged(newProgress)
-                        }
-
-                        onEntered: progressTrack.hovering = true
-                        onExited: progressTrack.hovering = false
-
-                        onPressed: function(mouse) {
-                            progressTrack.dragging = true
-                            setProgressAt(mouse.x)
-                        }
-
-                        onPositionChanged: function(mouse) {
-                            if (pressed) setProgressAt(mouse.x)
-                        }
-
-                        onReleased: function(mouse) {
-                            setProgressAt(mouse.x)
-                            progressTrack.dragging = false
-                            // 释放时触发回弹与发光
-                            handleBounce.restart()
-                            glowAnim.restart()
+                    Behavior on scale {
+                        NumberAnimation {
+                            duration: 240
+                            easing.type: Easing.OutCubic
                         }
                     }
                 }
+
+                MouseArea {
+                    id: progressArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+
+                    function setProgressAt(px) {
+                        var newProgress = Math.max(0, Math.min(1, px / progressTrack.width))
+                        root.progress = newProgress // 直接设置，触发 MediaPlayer 更新
+                        mediaPlayer.position = newProgress * mediaPlayer.duration
+                        root.seekPositionChanged(newProgress)
+                    }
+
+                    onPressed: function(mouse) {
+                        progressTrack.dragging = true
+                        setProgressAt(mouse.x)
+                    }
+                    onPositionChanged: function(mouse) {
+                        if (pressed) setProgressAt(mouse.x)
+                    }
+                    onReleased: function(mouse) {
+                        setProgressAt(mouse.x)
+                        progressTrack.dragging = false
+                        progressFillColor.opacity = 0.7
+                    }
+                }
+            }
 
             // 时间显示和控制按钮
             RowLayout {
@@ -1128,6 +1065,8 @@ Rectangle {
         // 初始化/更新取色
         coverColorSampler.requestPaint()
     }
+
+    
 
     onNextClicked: playNext()
     onPreviousClicked: playPrev()
