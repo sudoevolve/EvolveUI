@@ -83,6 +83,10 @@ public:
     Q_INVOKABLE QString getWindowsMusicFolder();
     Q_INVOKABLE QStringList scanWindowsMusic(bool recursive = true);
     Q_INVOKABLE QStringList scanAllAvailableMusic(bool recursive = true);
+
+    // 新增：歌词支持（返回文本或文件URL）
+    Q_INVOKABLE QString loadLyricsText(const QString &source);
+    Q_INVOKABLE QString findLyricsFileForSource(const QString &source);
     
     // 新增：文件监控功能
     Q_INVOKABLE void startWatching();
@@ -115,7 +119,8 @@ private:
     QStringList m_cachedFiles;
     QStringList m_watchedPaths;
     bool m_isWatching;
-    static const int SCAN_DELAY_MS = 1000; // 延迟扫描避免频繁更新
+    static const int SCAN_DELAY_MS = 4000; // 延迟扫描避免频繁更新（加大退抖间隔）
+    qint64 m_lastScanMs = 0; // 上次扫描时间戳
 };
 
 #endif // CORE_MUSIC_H

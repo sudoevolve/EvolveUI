@@ -166,6 +166,7 @@ MusicLibrary::MusicLibrary(QObject *parent)
     // 配置扫描定时器
     m_scanTimer->setSingleShot(true);
     m_scanTimer->setInterval(SCAN_DELAY_MS);
+    m_lastScanMs = 0;
     
     // 连接信号
     connect(m_watcher, &QFileSystemWatcher::directoryChanged,
@@ -266,6 +267,88 @@ QStringList MusicLibrary::scanAllAvailableMusic(bool recursive)
     return allMusic;
 }
 
+// 查找与音源同名同目录的 LRC，或项目根目录回退
+QString MusicLibrary::findLyricsFileForSource(const QString &source)
+{
+    if (source.isEmpty()) return QString();
+
+    // 优先：同名同目录
+    auto trySameDir = [&](const QString &localPath) -> QString {
+        QFileInfo fi(localPath);
+        if (!fi.exists()) return QString();
+        QString candidate = fi.dir().absoluteFilePath(fi.completeBaseName() + ".lrc");
+        if (QFile::exists(candidate)) {
+            return QUrl::fromLocalFile(candidate).toString();
+        }
+        // 兼容：若同名未命中且目录内只有一个 .lrc，则使用该文件
+        QStringList lrcs = fi.dir().entryList(QStringList() << "*.lrc", QDir::Files, QDir::Name);
+        if (lrcs.size() == 1) {
+            QString onlyLrc = fi.dir().absoluteFilePath(lrcs.first());
+            if (QFile::exists(onlyLrc)) {
+                return QUrl::fromLocalFile(onlyLrc).toString();
+            }
+        }
+        return QString();
+    };
+
+    if (source.startsWith("file:///")) {
+        QUrl u(source);
+        QString localPath = u.toLocalFile();
+        QString hit = trySameDir(localPath);
+        if (!hit.isEmpty()) return hit;
+    } else if (source.startsWith("qrc:/")) {
+        // qrc: 路径下尝试根据文件名在项目根目录匹配
+        QUrl u(source);
+        QFileInfo fi(u.path());
+        QString baseName = fi.completeBaseName();
+        QString root = defaultProjectRoot();
+        QString candidate = QDir(root).absoluteFilePath(baseName + ".lrc");
+        if (QFile::exists(candidate)) {
+            return QUrl::fromLocalFile(candidate).toString();
+        }
+    } else {
+        // 普通本地路径
+        QString hit = trySameDir(source);
+        if (!hit.isEmpty()) return hit;
+    }
+
+    // 回退：项目根目录第一个 .lrc 文件（避免完全无歌词）
+    QString root = defaultProjectRoot();
+    QDirIterator it(root, QStringList() << "*.lrc", QDir::Files, QDirIterator::NoIteratorFlags);
+    if (it.hasNext()) {
+        QString p = it.next();
+        return QUrl::fromLocalFile(p).toString();
+    }
+    return QString();
+}
+
+// 读取歌词文本（UTF-8优先，回退本地编码）
+QString MusicLibrary::loadLyricsText(const QString &source)
+{
+    QString lrcUrl = findLyricsFileForSource(source);
+    if (lrcUrl.isEmpty()) return QString();
+    QUrl u(lrcUrl);
+    QString lrcPath = u.toLocalFile();
+    if (lrcPath.isEmpty()) {
+        // 兜底：如果传入的就是本地路径
+        lrcPath = lrcUrl;
+    }
+    QFile f(lrcPath);
+    if (!f.exists()) return QString();
+    if (f.open(QIODevice::ReadOnly)) {
+        QByteArray bytes = f.readAll();
+        f.close();
+        // 尝试UTF-8
+        QString text = QString::fromUtf8(bytes);
+        // 若解码后基本为空，则回退本地编码
+        if (text.trimmed().isEmpty() && !bytes.isEmpty()) {
+            text = QString::fromLocal8Bit(bytes);
+        }
+        return text;
+    }
+    return QString();
+}
+
 // 新增：文件监控功能
 void MusicLibrary::startWatching()
 {
@@ -362,6 +445,13 @@ void MusicLibrary::onFileChanged(const QString &path)
 void MusicLibrary::performDelayedScan()
 {
     if (!m_isWatching) return;
+    const qint64 now = QDateTime::currentMSecsSinceEpoch();
+    if (m_lastScanMs > 0 && (now - m_lastScanMs) < 7000) {
+        // 退抖：7s 内不重复全量扫描
+        m_scanTimer->start();
+        return;
+    }
+    m_lastScanMs = now;
     
     // 重新扫描所有音乐文件
     QStringList newFiles = scanAllAvailableMusic(true);
@@ -439,18 +529,7 @@ void MusicLibrary::addWatchPath(const QString &path)
     
     m_watchedPaths.append(path);
     m_watcher->addPath(path);
-    
-    // 递归添加子目录到监控（限制深度避免性能问题）
-    QDirIterator it(path, QDir::Dirs | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
-    int depth = 0;
-    while (it.hasNext() && depth < 10) { // 限制最大深度为10
-        QString subDir = it.next();
-        if (!m_watchedPaths.contains(subDir)) {
-            m_watchedPaths.append(subDir);
-            m_watcher->addPath(subDir);
-        }
-        depth++;
-    }
+    // 取消递归子目录监控，避免大量事件导致频繁全量扫描
 }
 
 void MusicLibrary::updateFileCache()
