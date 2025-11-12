@@ -1,12 +1,16 @@
-// MusicWindow.qml — 音乐窗口的内容组件（放入 EAnimatedWindow 内）
+// MusicWindow.qml
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Effects
+//  C++ 侧读取歌词
+import MusicLibrary 1.0
 
 Item {
     id: root
     anchors.fill: parent
     clip: true
+
+    
 
     // 主题从外部传入
     property var theme
@@ -17,16 +21,200 @@ Item {
     property string title: "未知歌曲"
     property string artist: "未知艺术家"
     property var sourceItem: null
-    property var lyricsLines: [
-        "飞机划过蓝色天际线",
-        "是谁带走我心愿",
-        "云端书里写着白色语言",
-        "浪漫被晚风吹散",
-        "我站在时光的背面",
-        "等时间的道歉",
-        "如果有天我突然失联",
-        "你会不会习惯"
-    ]
+    // 歌词数据：解析自 LRC，[{ t:毫秒, text:字符串 }]
+    property var lyricsEntries: []
+    property int currentLyricIndex: -1
+    property bool lyricsAvailable: false
+    property string lyricsFilePath: ""
+    // 封面显示控制：
+    property string displayCoverImage: ""
+    property bool displayCoverIsDefault: true
+    property string pendingCoverUrl: ""
+    property int coverFadeDuration: 1920
+    property string circleCoverImage: ""
+
+    // 首次进入或外部赋值 sourceItem 时，初始化文案/歌词/封面
+    onSourceItemChanged: {
+        if (!sourceItem) {
+            title = "未知歌曲"
+            artist = "未知艺术家"
+            displayCoverIsDefault = true
+            displayCoverImage = ""
+            pendingCoverUrl = ""
+            lyricsEntries = []
+            lyricsAvailable = false
+            lyricsFilePath = ""
+            currentLyricIndex = -1
+            return
+        }
+
+        if (typeof sourceItem.songTitle === "string") title = sourceItem.songTitle
+        if (typeof sourceItem.artistName === "string") artist = sourceItem.artistName
+
+        // 初始化封面
+        if (sourceItem.coverImageIsDefault) {
+            displayCoverIsDefault = true
+            displayCoverImage = ""
+            pendingCoverUrl = ""
+            circleCoverImage = ""
+        } else if (sourceItem.coverImage && sourceItem.coverImage.length > 0) {
+            if (!displayCoverImage || displayCoverImage.length === 0) {
+                displayCoverImage = sourceItem.coverImage
+                displayCoverIsDefault = false
+                pendingCoverUrl = ""
+                circleCoverImage = sourceItem.coverImage
+            } else {
+                pendingCoverUrl = sourceItem.coverImage
+                nextCoverLoader.source = pendingCoverUrl
+            }
+        }
+
+        // 初始化歌词与当前位置
+        loadLyricsForSource(sourceItem.source)
+        if (typeof sourceItem.positionMs === "number") {
+            updateLyricIndex(sourceItem.positionMs)
+        }
+    }
+
+    Component.onCompleted: {
+        if (!sourceItem) return
+        if (typeof sourceItem.songTitle === "string") title = sourceItem.songTitle
+        if (typeof sourceItem.artistName === "string") artist = sourceItem.artistName
+        loadLyricsForSource(sourceItem.source)
+        if (typeof sourceItem.positionMs === "number") updateLyricIndex(sourceItem.positionMs)
+        if (sourceItem.coverImageIsDefault) {
+            displayCoverIsDefault = true
+            displayCoverImage = ""
+            pendingCoverUrl = ""
+        } else if (sourceItem.coverImage && sourceItem.coverImage.length > 0) {
+            // 启动时若已有封面，直接显示，再由预加载机制处理后续切换
+            displayCoverImage = sourceItem.coverImage
+            displayCoverIsDefault = false
+            pendingCoverUrl = ""
+        }
+        circleCoverImage = displayCoverImage
+    }
+
+    // C++侧音乐库对象用于可靠读取本地歌词文件
+    MusicLibrary {
+        id: musicLib
+    }
+
+    // 解析 LRC 文本为时间戳 + 行文本
+    function parseLrc(lrcText) {
+        var entries = []
+        var offsetMs = 0
+        var lines = lrcText.split(/\r?\n/)
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].trim()
+            if (line.length === 0) continue
+
+            // 处理 offset 标签
+            var offsetMatch = line.match(/^\[offset:([-+]?\d+)\]$/i)
+            if (offsetMatch) {
+                offsetMs = parseInt(offsetMatch[1]) || 0
+                continue
+            }
+
+            // 匹配多个时间戳的行，如 [00:12.34][00:15.00]歌词
+            var tsRegex = /\[(\d{1,2}):(\d{1,2})(?:[.:](\d{1,3}))?\]/g
+            var textPart = line.replace(tsRegex, "").trim()
+            if (textPart.length === 0) continue
+
+            var m
+            tsRegex.lastIndex = 0
+            while ((m = tsRegex.exec(line)) !== null) {
+                var mm = parseInt(m[1]) || 0
+                var ss = parseInt(m[2]) || 0
+                var cs = m[3] ? m[3] : "0"
+                // 归一化毫秒（支持两位/三位小数）
+                var ms = 0
+                if (cs.length === 3) ms = parseInt(cs)
+                else if (cs.length === 2) ms = parseInt(cs) * 10
+                else ms = parseInt(cs) * 100
+                var t = mm * 60000 + ss * 1000 + ms + offsetMs
+                if (t < 0) t = 0
+                entries.push({ t: t, text: textPart })
+            }
+        }
+        // 按时间排序并去重空白
+        entries.sort(function(a, b) { return a.t - b.t })
+        return entries
+    }
+
+    // 根据音源路径推断并加载同名 .lrc 文件
+    function loadLyricsForSource(src) {
+        if (!src || src.length === 0) {
+            console.warn("歌词加载：音频源为空")
+            lyricsEntries = []
+            lyricsAvailable = false
+            lyricsFilePath = ""
+            currentLyricIndex = -1
+            return
+        }
+
+        // 使用 C++ 侧读取歌词文本
+        var raw = musicLib.loadLyricsText(src)
+        var lrcFileUrl = musicLib.findLyricsFileForSource(src)
+        console.log("歌词加载：C++读取完成，长度=", (raw || "").length, "file=", lrcFileUrl)
+        if (raw && raw.length > 0) {
+            var parsed = parseLrc(raw)
+            if (parsed && parsed.length > 0) {
+                lyricsEntries = parsed
+                lyricsAvailable = true
+                lyricsFilePath = lrcFileUrl
+                console.log("歌词解析成功：行数", parsed.length)
+                // 加载完成后，立即根据当前播放进度定位到对应歌词行，避免重新打开时回到顶部
+                if (sourceItem && typeof sourceItem.positionMs === "number") {
+                    updateLyricIndex(sourceItem.positionMs)
+                    // 在视图下一帧确保定位到当前索引
+                    Qt.callLater(function() {
+                        if (lyricList && currentLyricIndex >= 0) {
+                            lyricList.positionViewAtIndex(currentLyricIndex, ListView.Center)
+                        }
+                    })
+                }
+                return
+            }
+        }
+
+        // 未找到或解析失败：清空并显示占位
+        console.warn("歌词未找到或解析失败")
+        lyricsEntries = []
+        lyricsAvailable = false
+        lyricsFilePath = lrcFileUrl
+        currentLyricIndex = -1
+    }
+
+    // 移除 QML 端文件回退读取，统一走 C++ 端
+
+    // 根据毫秒进度更新当前歌词行
+    function updateLyricIndex(posMs) {
+        if (!lyricsAvailable || lyricsEntries.length === 0) {
+            currentLyricIndex = -1
+            return
+        }
+        // 从当前索引向前后逼近，避免每次线性扫描
+        var idx = currentLyricIndex
+        if (idx < 0) idx = 0
+        // 向后推进
+        while (idx + 1 < lyricsEntries.length && lyricsEntries[idx + 1].t <= posMs) {
+            idx++
+        }
+        // 如播放进度回退，向前退
+        while (idx > 0 && lyricsEntries[idx].t > posMs) {
+            idx--
+        }
+        currentLyricIndex = idx
+    }
+
+    // 格式化时间（秒 -> mm:ss）
+    function formatTime(seconds) {
+        var s = Math.max(0, Math.floor(seconds || 0))
+        var m = Math.floor(s / 60)
+        var ss = s % 60
+        return (m < 10 ? "" + m : "" + m) + ":" + (ss < 10 ? "0" + ss : "" + ss)
+    }
 
     FontLoader {
         id: iconFont
@@ -44,7 +232,19 @@ Item {
         id: fullscreenCoverSource
         anchors.fill: parent
         visible: false
-        source: coverIsDefault ? "" : coverImage
+        source: displayCoverIsDefault ? "" : displayCoverImage
+        fillMode: Image.PreserveAspectCrop
+        cache: false
+        asynchronous: false
+        antialiasing: true
+        smooth: true
+        mipmap: true
+    }
+    Image {
+        id: fullscreenCoverSourceNext
+        anchors.fill: parent
+        visible: false
+        source: ""
         fillMode: Image.PreserveAspectCrop
         cache: false
         asynchronous: false
@@ -53,14 +253,48 @@ Item {
         mipmap: true
     }
 
+    // 下一个封面预加载（隐藏），准备好后再切换
+    Image {
+        id: nextCoverLoader
+        anchors.fill: parent
+        visible: false
+        source: pendingCoverUrl
+        fillMode: Image.PreserveAspectCrop
+        cache: false
+        asynchronous: false
+        antialiasing: true
+        smooth: true
+        mipmap: true
+        onStatusChanged: {
+            if (status === Image.Ready && pendingCoverUrl && pendingCoverUrl.length > 0) {
+                fullscreenCoverSourceNext.source = pendingCoverUrl
+                fullscreenCoverBlurNext.visible = true
+                fullscreenCoverBlurNext.opacity = 0
+                coverCrossFadeAnim.restart()
+                circleCoverImage = pendingCoverUrl
+            }
+        }
+    }
+
     // 模糊封面背景
     MultiEffect {
         id: fullscreenCoverBlur
         anchors.fill: parent
         source: fullscreenCoverSource
-        visible: !coverIsDefault && coverImage !== ""
-        opacity: fullscreenCoverSource.status === Image.Ready ? 1 : 0
-        Behavior on opacity { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
+        visible: (!displayCoverIsDefault && displayCoverImage !== "") || fullscreenCoverBlurNext.visible
+        opacity: (!displayCoverIsDefault && displayCoverImage !== "") ? 1 : 0
+        blurEnabled: true
+        blur: 1.0
+        blurMax: 64
+        blurMultiplier: 2.0
+        autoPaddingEnabled: false
+    }
+    MultiEffect {
+        id: fullscreenCoverBlurNext
+        anchors.fill: parent
+        source: fullscreenCoverSourceNext
+        visible: false
+        opacity: 0
         blurEnabled: true
         blur: 1.0
         blurMax: 64
@@ -68,11 +302,30 @@ Item {
         autoPaddingEnabled: false
     }
 
+    ParallelAnimation {
+        id: coverCrossFadeAnim
+        running: false
+        NumberAnimation { target: fullscreenCoverBlurNext; property: "opacity"; from: fullscreenCoverBlurNext.opacity; to: 1; duration: coverFadeDuration; easing.type: Easing.OutCubic }
+        NumberAnimation { target: fullscreenCoverBlur; property: "opacity"; from: fullscreenCoverBlur.opacity; to: 0; duration: coverFadeDuration; easing.type: Easing.OutCubic }
+        onStopped: {
+            if (fullscreenCoverBlurNext.visible && fullscreenCoverBlurNext.opacity >= 1) {
+                displayCoverImage = pendingCoverUrl
+                displayCoverIsDefault = false
+                fullscreenCoverSource.source = displayCoverImage
+                fullscreenCoverBlur.opacity = 1
+                fullscreenCoverBlurNext.opacity = 0
+                fullscreenCoverBlurNext.visible = false
+                fullscreenCoverSourceNext.source = ""
+                pendingCoverUrl = ""
+            }
+        }
+    }
+
     // 半透明主题色叠加，压制过亮/过透明
     Rectangle {
         anchors.fill: parent
         color: theme ? theme.blurOverlayColor : Qt.rgba(0,0,0,0.3)
-        visible: !coverIsDefault && coverImage !== ""
+        visible: (!displayCoverIsDefault && displayCoverImage !== "") || fullscreenCoverBlurNext.visible
         z: 2
         opacity: 1.0
     }
@@ -105,8 +358,9 @@ Item {
             GradientStop { position: 1.00; color: theme.secondaryColor }
         }
     }
+    
 
-    // 左侧圆形封面（旋转 + 波纹）
+    // 左侧圆形封面（旋转）
     Item {
         id: rotatingCoverContainer
         anchors.left: parent.left
@@ -115,12 +369,12 @@ Item {
         width: Math.round(Math.min(parent.height * 0.42, parent.width * 0.32))
         height: width
         z: 4
-        visible: !coverIsDefault && coverImage !== ""
+        visible: circleCoverImage !== ""
 
         Image {
             id: rotatingCoverSource
             anchors.fill: parent
-            source: coverImage
+            source: circleCoverImage
             fillMode: Image.PreserveAspectCrop
             cache: false
             asynchronous: false
@@ -130,18 +384,24 @@ Item {
             mipmap: true
         }
 
+        ShaderEffectSource {
+            id: coverSESource
+            sourceItem: rotatingCoverSource
+            hideSource: true
+            live: true
+            smooth: true
+            recursive: false
+        }
+
         Item {
             id: rotatingCoverMask
             anchors.fill: parent
             visible: false
             layer.enabled: true
-            layer.smooth: true
             Rectangle {
                 anchors.fill: parent
                 radius: width / 2
                 color: "black"
-                antialiasing: true
-                smooth: true
             }
         }
 
@@ -152,88 +412,98 @@ Item {
             maskEnabled: true
             maskSource: rotatingCoverMask
             autoPaddingEnabled: false
-            antialiasing: true
-            layer.enabled: true
-            layer.smooth: true
             maskThresholdMin: 0.5
-            maskSpreadAtMin: 1.0
-            layer.textureSize: Qt.size(Math.round(width), Math.round(height))
+            maskSpreadAtMin: 0.5
             transformOrigin: Item.Center
             z: 1
         }
 
-        SequentialAnimation {
-            id: coverSpinAnim
-            running: sourceItem && sourceItem.isPlaying
-            loops: Animation.Infinite
-            NumberAnimation { target: rotatingCoverMasked; property: "rotation"; from: 0; to: 360; duration: 18000; easing.type: Easing.Linear }
-        }
-
-        Item {
-            id: waveLayer
+        // 点击封面：播放/暂停
+        MouseArea {
+            id: coverArea
             anchors.fill: parent
-            z: -0.5
-            clip: false
-            visible: sourceItem && sourceItem.isPlaying && !coverIsDefault && coverImage !== ""
-            property color waveColor: theme ? Qt.rgba(theme.focusColor.r, theme.focusColor.g, theme.focusColor.b, 0.25) : Qt.rgba(255,255,255,0.25)
-
-            Repeater {
-                model: 3
-                Rectangle {
-                    id: ring
-                    color: "transparent"
-                    border.color: waveLayer.waveColor
-                    border.width: 2
-                    antialiasing: true
-                    smooth: true
-
-                    width: rotatingCoverContainer.width * 1.25
-                    height: width
-                    radius: width / 2
-                    x: rotatingCoverContainer.width / 2 - width / 2
-                    y: rotatingCoverContainer.height / 2 - height / 2
-
-                    opacity: 0.0
-
-                    transform: Scale {
-                        id: ringScale
-                        origin.x: ring.width / 2
-                        origin.y: ring.height / 2
-                        xScale: 0.2
-                        yScale: 0.2
-                    }
-
-                    SequentialAnimation on opacity {
-                        id: ringOpacityAnim
-                        running: waveLayer.visible
-                        loops: Animation.Infinite
-                        PauseAnimation { duration: index * 400 }
-                        NumberAnimation { to: 0.6; duration: 200; easing.type: Easing.OutQuad }
-                        NumberAnimation { to: 0.0; duration: 1400; easing.type: Easing.InQuad }
-                    }
-
-                    SequentialAnimation {
-                        id: ringScaleAnim
-                        running: waveLayer.visible
-                        loops: Animation.Infinite
-                        PauseAnimation { duration: index * 400 }
-                        ParallelAnimation {
-                            NumberAnimation { target: ringScale; property: "xScale"; from: 0.2; to: 1.0; duration: 1600; easing.type: Easing.OutCubic }
-                            NumberAnimation { target: ringScale; property: "yScale"; from: 0.2; to: 1.0; duration: 1600; easing.type: Easing.OutCubic }
-                        }
-                    }
-                }
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onPressed: {
+                // 触发不移动的边框发光反馈
+                coverGlowAnim.restart()
             }
-
-            Connections {
-                target: sourceItem
-                function onIsPlayingChanged() {
-                    if (sourceItem && !sourceItem.isPlaying) {
-                        rotatingCoverMasked.rotation = 0
-                    }
+            onClicked: {
+                if (!sourceItem) return;
+                if (sourceItem.isPlaying) {
+                    // 触发暂停信号（由 EMusicPlayer 响应）
+                    if (sourceItem.pauseClicked) sourceItem.pauseClicked();
+                } else {
+                    // 触发播放信号（由 EMusicPlayer 响应）
+                    if (sourceItem.playClicked) sourceItem.playClicked();
                 }
             }
         }
+
+        // 悬停叠层提示：显示播放/暂停图标并轻微遮罩
+        Item {
+            id: coverHoverOverlay
+            anchors.fill: parent
+            z: 3
+            // 仅在悬停或按压时淡入显示
+            opacity: (coverArea.containsMouse || coverArea.pressed) ? 1.0 : 0.0
+            Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutQuad } }
+
+            // 圆形半透明遮罩，匹配封面形状
+            Rectangle {
+                anchors.fill: parent
+                radius: width / 2
+                color: Qt.rgba(0, 0, 0, 0.09)
+                antialiasing: true
+                smooth: true
+            }
+
+            // 点击发光环（不移动的点击反馈）
+            Rectangle {
+                id: coverGlowRing
+                anchors.fill: parent
+                radius: width / 2
+                color: "transparent"
+                border.color: sourceItem ? sourceItem.coverProminentColor : (theme ? theme.focusColor : "#ffffff")
+                border.width: 2
+                opacity: 0.0
+                antialiasing: true
+                smooth: true
+            }
+
+            SequentialAnimation {
+                id: coverGlowAnim
+                running: false
+                NumberAnimation { target: coverGlowRing; property: "opacity"; to: 0.35; duration: 90; easing.type: Easing.OutQuad }
+                NumberAnimation { target: coverGlowRing; property: "opacity"; to: 0.0; duration: 240; easing.type: Easing.InQuad }
+            }
+
+            // 中心播放/暂停图标
+            Text {
+                anchors.centerIn: parent
+                text: (sourceItem && sourceItem.isPlaying) ? "\uf04c" : "\uf04b"
+                font.family: iconFont.name
+                font.pixelSize: Math.round(Math.min(parent.width, parent.height) * 0.28)
+                color: theme ? theme.textColor : "#ffffff"
+                opacity: 0.35
+                // 保持位置稳定：固定容器尺寸并居中绘制
+                width: parent.width
+                height: parent.height
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
+            }
+        }
+
+        Timer {
+            id: coverSpinTimer
+            interval: 33
+            running: sourceItem && sourceItem.isPlaying
+            repeat: true
+            onTriggered: rotatingCoverMasked.rotation = (rotatingCoverMasked.rotation + 0.6) % 360
+        }
+        
+
     }
 
     // 轻微噪声抖动
@@ -242,14 +512,14 @@ Item {
         z: 2.1
         property real strength: theme && theme.isDark ? 0.05 : 0.03
         fragmentShader: "\n                    uniform lowp float qt_Opacity;\n                    uniform lowp float strength;\n                    void main() {\n                        highp float n = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);\n                        gl_FragColor = vec4(vec3(n), strength) * qt_Opacity;\n                    }\n                "
-        visible: !coverIsDefault && coverImage !== ""
+        visible: !displayCoverIsDefault && displayCoverImage !== ""
     }
 
     // 无封面：显示音乐图标（居中）
     Item {
         anchors.fill: rotatingCoverContainer
         z: 3
-        visible: coverIsDefault || coverImage === ""
+        visible: displayCoverIsDefault || displayCoverImage === ""
         Text {
             anchors.centerIn: parent
             text: "\uf001" // FontAwesome fa-music
@@ -259,13 +529,27 @@ Item {
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
         }
+        // 无封面时同样支持点击播放/暂停
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: {
+                if (!sourceItem) return;
+                if (sourceItem.isPlaying) {
+                    if (sourceItem.pauseClicked) sourceItem.pauseClicked();
+                } else {
+                    if (sourceItem.playClicked) sourceItem.playClicked();
+                }
+            }
+        }
     }
 
     // 右侧：标题 + 渐隐滚动歌词
     Item {
         id: lyricsPanel
         anchors.left: rotatingCoverContainer.right
-        anchors.leftMargin: 260
+        anchors.leftMargin: 170
         anchors.right: parent.right
         anchors.rightMargin: 40
         anchors.verticalCenter: parent.verticalCenter
@@ -296,52 +580,416 @@ Item {
                 }
             }
 
-            Flickable {
-                id: lyricFlick
+            // 随播放滚动显示歌词（优先使用 LRC）
+            ListView {
+                id: lyricList
                 width: parent.width
-                height: lyricsPanel.height - 42
-                contentWidth: width
-                clip: true
-                interactive: true
+                // 限制最多显示13行
+                readonly property int maxVisibleLines: 13
+                readonly property int rowHeight: 28
+                readonly property int rowSpacing: 10
+                height: Math.min(lyricsPanel.height - 42, maxVisibleLines * rowHeight + (maxVisibleLines - 1) * rowSpacing)
+                clip: false
+                spacing: 10
                 boundsBehavior: Flickable.StopAtBounds
-                property bool autoScroll: sourceItem && sourceItem.isPlaying
+                model: lyricsAvailable ? lyricsEntries : [ { text: "未找到歌词" } ]
+                currentIndex: currentLyricIndex
+                // 高亮移动与范围：将当前行保持在视图偏上的位置
+                highlightMoveDuration: 380
+                highlightFollowsCurrentItem: true
+                preferredHighlightBegin: height * 0.25
+                preferredHighlightEnd: height * 0.45
+                highlightRangeMode: ListView.StrictlyEnforceRange
 
-                Column {
-                    id: lyricColumn
-                    width: lyricFlick.width
-                    spacing: 10
-                    Repeater {
-                        model: lyricsLines.length
-                        delegate: Text {
-                            width: lyricColumn.width
-                            text: lyricsLines[index]
+                // 列表创建后，用当前位置居中一次，避免初始跳到顶部
+                Component.onCompleted: {
+                    if (currentLyricIndex >= 0) {
+                        Qt.callLater(function() {
+                            lyricList.positionViewAtIndex(currentLyricIndex, ListView.Center)
+                        })
+                    }
+                }
+
+                // 内容滚动缓动动画
+                Behavior on contentY {
+                    NumberAnimation { duration: 320; easing.type: Easing.OutCubic }
+                }
+
+                delegate: Item {
+                    width: lyricList.width
+                    height: lyricList.rowHeight
+                    // 使用 index 与 currentLyricIndex 比较，避免 ListView.isCurrentItem 在嵌套时不稳定
+                    readonly property bool isActive: index === currentLyricIndex
+                    // 视口渐隐：顶部两行与底部两行做渐变透明
+                    readonly property real centerYInView: (y - lyricList.contentY) + height / 2
+                    readonly property real fadeArea: (lyricList.rowHeight * 4) + (lyricList.rowSpacing * 4)
+                    readonly property real fadeTopFactor: Math.max(0, Math.min(1, centerYInView / Math.max(1, fadeArea)))
+                    readonly property real fadeBottomFactor: Math.max(0, Math.min(1, (lyricList.height - centerYInView) / Math.max(1, fadeArea)))
+                    readonly property real edgeFactor: Math.min(fadeTopFactor, fadeBottomFactor)
+                    // 堆叠两层文本：底层普通颜色，顶层主题色以裁剪宽度实现从左到右填充
+                    Item {
+                        id: textStack
+                        anchors.fill: parent
+                        // 顶/底部渐隐：靠近边缘逐步降低整体不透明度
+                        opacity: (isActive ? 1.0 : 0.6) * edgeFactor
+                        Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                        // 放大动画使当前行视觉更突出
+                        scale: isActive ? 1.06 : 1.0
+                        Behavior on scale { NumberAnimation { duration: 360; easing.type: Easing.OutCubic } }
+
+                        // 底层普通颜色文本（非当前行透明度为 0.6）
+                        Text {
+                            id: baseText
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width
+                            text: modelData.text
                             wrapMode: Text.NoWrap
                             horizontalAlignment: Text.AlignLeft
+                            font.pixelSize: isActive ? 22 : 18
+                            font.bold: isActive
+                            font.weight: isActive ? Font.DemiBold : Font.Normal
                             color: theme ? theme.textColor : "#ffffff"
-                            font.pixelSize: 18
+                            opacity: isActive ? 1.0 : 0.6
+                        }
+
+                        // 顶层主题色填充，使用裁剪宽度实现从左到右渐进填充
+                        Item {
+                            id: fillMask
+                            anchors.verticalCenter: parent.verticalCenter
+                            // 根据歌词进度动态填充：本行开始到下一行开始的区间
+                            readonly property real lineStart: (index >= 0 && index < lyricsEntries.length) ? lyricsEntries[index].t : 0
+                            readonly property real lineEnd: (index + 1 < lyricsEntries.length) ? lyricsEntries[index + 1].t : (sourceItem ? sourceItem.duration : lineStart + 3000)
+                            readonly property real posMs: (sourceItem && sourceItem.positionMs) ? sourceItem.positionMs : 0
+                            readonly property real ratio: isActive ? Math.max(0, Math.min(1, (posMs - lineStart) / Math.max(1, lineEnd - lineStart))) : 0
+                            width: baseText.paintedWidth * ratio
+                            height: parent.height
+                            clip: true
+
+                            Text {
+                                id: fillText
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: parent.width
+                                text: modelData.text
+                                wrapMode: Text.NoWrap
+                                horizontalAlignment: Text.AlignLeft
+                                font.pixelSize: isActive ? 22 : 18
+                                font.bold: isActive
+                                font.weight: isActive ? Font.DemiBold : Font.Normal
+                                color: theme ? theme.focusColor : "#00C4B3"
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 监听播放进度与歌曲切换，驱动歌词滚动
+            Connections {
+                target: sourceItem
+                function onSourceChanged() {
+                    // 切歌时重新加载歌词
+                    loadLyricsForSource(sourceItem.source)
+                    // 切换后按当前进度立即定位歌词（暂停状态下也能保持当前位置）
+                    if (sourceItem && typeof sourceItem.positionMs === "number") {
+                        updateLyricIndex(sourceItem.positionMs)
+                    }
+                }
+                function onCoverImageChanged() {
+                    if (sourceItem.coverImage && sourceItem.coverImage.length > 0) {
+                        // 若当前未显示任何封面（首次进入），直接显示以避免空白
+                        if (!displayCoverImage || displayCoverImage.length === 0) {
+                            displayCoverImage = sourceItem.coverImage
+                            displayCoverIsDefault = false
+                            pendingCoverUrl = ""
+                        } else {
+                            // 后续切换仍走预加载，避免闪白
+                            pendingCoverUrl = sourceItem.coverImage
+                            nextCoverLoader.source = pendingCoverUrl
+                        }
+                        circleCoverImage = sourceItem.coverImage
+                    }
+                }
+                function onCoverImageIsDefaultChanged() {
+                    if (sourceItem.coverImageIsDefault) {
+                        displayCoverIsDefault = true
+                        displayCoverImage = ""
+                        pendingCoverUrl = ""
+                        circleCoverImage = ""
+                    }
+                    // 当为 false 时，不立即切换，等待 nextCoverLoader 加载完毕
+                }
+                function onSongTitleChanged() {
+                    title = sourceItem.songTitle
+                }
+                function onArtistNameChanged() {
+                    artist = sourceItem.artistName
+                }
+                function onIsPlayingChanged() {
+                    if (!sourceItem.isPlaying) {
+                        // 暂停不改变 currentIndex，但不再移动
+                    }
+                }
+                function onPositionMsChanged() {
+                    updateLyricIndex(sourceItem.positionMs)
+                    // 由 StrictlyEnforceRange 保持当前项停留在偏上的范围内
+                }
+            }
+        }
+    }
+
+    // 底部控件
+    Item {
+        id: bottomControls
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.leftMargin: 40
+        anchors.rightMargin: 40
+        anchors.bottomMargin: 24
+        height: 56
+        z: 6
+        visible: true
+
+        // 背景条
+        Rectangle {
+            anchors.fill: parent
+            radius: 14
+            color: "transparent"
+            opacity: 0.85
+            antialiasing: true
+            smooth: true
+        }
+
+        // 内容容器：左侧控制按钮，右侧时间文本
+        Item {
+            anchors.fill: parent
+            anchors.margins: 10
+
+            Row {
+                id: controlRow
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 22
+
+                // 上一曲
+                Text {
+                    id: prevIcon
+                    text: "\uf04a"
+                    font.family: iconFont.name
+                    font.pixelSize: 20
+                    color: prevArea.pressed ? (theme ? theme.focusColor : "#00C4B3") : (theme ? theme.textColor : "#ffffff")
+                    verticalAlignment: Text.AlignVCenter
+                    width: 28; height: 28
+                    horizontalAlignment: Text.AlignHCenter
+                    MouseArea {
+                        id: prevArea
+                        anchors.fill: parent
+                        anchors.margins: -4
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (sourceItem && sourceItem.previousClicked) sourceItem.previousClicked()
                         }
                     }
                 }
 
-                contentHeight: lyricColumn.height
-                NumberAnimation on contentY {
-                    running: lyricFlick.autoScroll && lyricColumn.height > lyricFlick.height
-                    loops: Animation.Infinite
-                    from: 0
-                    to: Math.max(0, lyricColumn.height - lyricFlick.height)
-                    duration: 24000
-                    easing.type: Easing.Linear
-                }
+                // 播放/暂停
+                Text {
+                    id: playPauseIcon
+                    text: (sourceItem && sourceItem.isPlaying) ? "\uf04c" : "\uf04b"
+                    font.family: iconFont.name
+                    font.pixelSize: 22
+                    color: playArea.pressed ? (theme ? theme.focusColor : "#00C4B3") : (theme ? theme.textColor : "#ffffff")
+                    verticalAlignment: Text.AlignVCenter
+                    width: 32; height: 32
+                    horizontalAlignment: Text.AlignHCenter
+                    transformOrigin: Item.Center
+                    // 悬停与按压缩放动画（悬停放大、按压轻微缩小）
+                    scale: playArea.pressed ? 0.92 : (playArea.containsMouse ? 1.08 : 1.0)
+                    Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutQuad } }
 
-                Connections {
-                    target: sourceItem
-                    function onIsPlayingChanged() {
-                        lyricFlick.autoScroll = sourceItem && sourceItem.isPlaying
-                        if (!lyricFlick.autoScroll) {
-                            lyricFlick.contentY = 0
+                    // 点击弹跳效果，增强反馈
+                    SequentialAnimation {
+                        id: playClickBounce
+                        running: false
+                        NumberAnimation { target: playPauseIcon; property: "scale"; to: 1.15; duration: 90; easing.type: Easing.OutBack }
+                        NumberAnimation { target: playPauseIcon; property: "scale"; to: playArea.containsMouse ? 1.08 : 1.0; duration: 140; easing.type: Easing.InQuad }
+                    }
+                    MouseArea {
+                        id: playArea
+                        anchors.fill: parent
+                        anchors.margins: -4
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (!sourceItem) return
+                            if (sourceItem.isPlaying) {
+                                if (sourceItem.pauseClicked) sourceItem.pauseClicked()
+                            } else {
+                                if (sourceItem.playClicked) sourceItem.playClicked()
+                            }
+                            playClickBounce.restart()
                         }
                     }
                 }
+
+                // 下一曲
+                Text {
+                    id: nextIcon
+                    text: "\uf051"
+                    font.family: iconFont.name
+                    font.pixelSize: 20
+                    color: nextArea.pressed ? (theme ? theme.focusColor : "#00C4B3") : (theme ? theme.textColor : "#ffffff")
+                    verticalAlignment: Text.AlignVCenter
+                    width: 28; height: 28
+                    horizontalAlignment: Text.AlignHCenter
+                    MouseArea {
+                        id: nextArea
+                        anchors.fill: parent
+                        anchors.margins: -4
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (sourceItem && sourceItem.nextClicked) sourceItem.nextClicked()
+                        }
+                    }
+                }
+            }
+
+            // 进度条（中间）
+            Rectangle {
+                id: progressTrack
+                anchors.left: controlRow.right
+                anchors.leftMargin: 24
+                anchors.right: timeText.left
+                anchors.rightMargin: 24
+                anchors.verticalCenter: parent.verticalCenter
+                height: 8
+                radius: 4
+                color: theme ? Qt.rgba(theme.textColor.r, theme.textColor.g, theme.textColor.b, 0.25) : Qt.rgba(255,255,255,0.25)
+                antialiasing: true
+                smooth: true
+
+                // 当前进度比例（优先使用 sourceItem.progress）
+                readonly property real ratio: (sourceItem && typeof sourceItem.progress === "number") ? Math.max(0, Math.min(1, sourceItem.progress)) : ((sourceItem && sourceItem.duration > 0) ? Math.max(0, Math.min(1, sourceItem.position / sourceItem.duration)) : 0)
+
+                // 已播放填充
+                Rectangle {
+                    id: progressFill
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width * progressTrack.ratio
+                    height: parent.height
+                    radius: parent.radius
+                    color: theme ? theme.focusColor : "#00C4B3"
+                    antialiasing: true
+                    smooth: true
+                    // 避免窗口初次打开时从0到当前位置的跳变，只在拖动时动画
+                    Behavior on width {
+                        enabled: progressArea && progressArea.pressed
+                        NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
+                    }
+                }
+
+                // 拖动柄
+                Rectangle {
+                    id: progressHandle
+                    width: 14
+                    height: 14
+                    radius: 7
+                    x: Math.max(0, Math.min(progressTrack.width - width, progressFill.width - width / 2))
+                    y: progressTrack.height / 2 - height / 2
+                    color: theme ? theme.focusColor : "#00C4B3"
+                    border.color: theme ? Qt.rgba(theme.textColor.r, theme.textColor.g, theme.textColor.b, 0.35) : Qt.rgba(255,255,255,0.35)
+                    border.width: 1
+                    antialiasing: true
+                    smooth: true
+                    opacity: 0.95
+                }
+
+                // 脉冲光效层：拖动时在拖动柄周围扩散环形光
+                Item {
+                    id: pulseLayer
+                    anchors.centerIn: progressHandle
+                    width: progressHandle.width
+                    height: width
+                    visible: progressArea.pressed
+                    z: -0.1
+                    clip: false
+                    property color glowColor: theme ? Qt.rgba(theme.focusColor.r, theme.focusColor.g, theme.focusColor.b, 0.40) : Qt.rgba(0, 196, 179, 0.40)
+
+                    Repeater {
+                        model: 3
+                        Rectangle {
+                            id: ring
+                            anchors.centerIn: parent
+                            width: parent.width
+                            height: width
+                            radius: width / 2
+                            color: "transparent"
+                            border.color: pulseLayer.glowColor
+                            border.width: 2
+                            antialiasing: true
+                            smooth: true
+                            opacity: 0.0
+
+                            transform: Scale {
+                                id: ringScale
+                                origin.x: ring.width / 2
+                                origin.y: ring.height / 2
+                                xScale: 0.6
+                                yScale: 0.6
+                            }
+
+                            SequentialAnimation on opacity {
+                                running: pulseLayer.visible
+                                loops: Animation.Infinite
+                                PauseAnimation { duration: index * 180 }
+                                NumberAnimation { to: 0.6; duration: 140; easing.type: Easing.OutQuad }
+                                NumberAnimation { to: 0.0; duration: 900; easing.type: Easing.InQuad }
+                            }
+
+                            SequentialAnimation {
+                                running: pulseLayer.visible
+                                loops: Animation.Infinite
+                                PauseAnimation { duration: index * 180 }
+                                ParallelAnimation {
+                                    NumberAnimation { target: ringScale; property: "xScale"; from: 0.6; to: 2.0; duration: 1040; easing.type: Easing.OutCubic }
+                                    NumberAnimation { target: ringScale; property: "yScale"; from: 0.6; to: 2.0; duration: 1040; easing.type: Easing.OutCubic }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 交互：拖动与点击设置进度
+                MouseArea {
+                    id: progressArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onPressed: function(mouse) {
+                        var r = Math.max(0, Math.min(1, mouse.x / progressTrack.width))
+                        if (sourceItem && sourceItem.seekPositionChanged) sourceItem.seekPositionChanged(r)
+                    }
+                    onPositionChanged: function(mouse) {
+                        if (pressed) {
+                            var r = Math.max(0, Math.min(1, mouse.x / progressTrack.width))
+                            if (sourceItem && sourceItem.seekPositionChanged) sourceItem.seekPositionChanged(r)
+                        }
+                    }
+                }
+            }
+
+            // 时间显示（右侧）
+            Text {
+                id: timeText
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                text: sourceItem ? (formatTime(sourceItem.position) + " / " + formatTime(sourceItem.duration)) : "--:-- / --:--"
+                font.pixelSize: 14
+                color: theme ? Qt.darker(theme.textColor, 1.15) : "#dddddd"
+                opacity: 0.9
+                horizontalAlignment: Text.AlignRight
             }
         }
     }

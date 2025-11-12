@@ -10,7 +10,7 @@ ColumnLayout {
     // ==== 外部接口 ====
     property bool backgroundVisible: true        // 是否显示背景
     property string title: "点击展开"             // 标题文字
-    property bool expanded: false                 // 是否展开
+    property bool expanded: true                 // 是否展开
     default property alias content: contentLayout.data  // 默认内容插槽
 
     // ==== 样式 ====
@@ -21,6 +21,7 @@ ColumnLayout {
     property color shadowColor: theme.shadowColor
     property bool shadowEnabled: true
     property int headerHeight: 52
+    property int contentHeight: 400
 
     // ==== 1. 标题栏  ====
     Item {
@@ -97,7 +98,7 @@ ColumnLayout {
         radius: root.radius
         Layout.fillWidth: true
         color: root.backgroundVisible ? theme.secondaryColor : "transparent"
-        height: root.expanded ? contentLayout.implicitHeight : 0
+        height: root.expanded ? root.contentHeight : 0
         clip: true
         Layout.topMargin: 8
 

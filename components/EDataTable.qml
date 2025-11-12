@@ -134,8 +134,9 @@ Rectangle {
             anchors.fill: parent
             anchors.margins: 10
             clip: true
+            flickableDirection: Flickable.HorizontalFlick
             contentWidth: (root.selectable ? 40 : 0) + columnWidths.reduce(function(a, b) { return a + b; }, 0)
-            contentHeight: headerRow.height + (tableView.model ? tableView.model.count * root.rowHeight : 0)
+            contentHeight: flick.height
 
             Column {
                 width: flick.contentWidth

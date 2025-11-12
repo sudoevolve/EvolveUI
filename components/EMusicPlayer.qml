@@ -21,6 +21,8 @@ Rectangle {
     property real progress: 0.0  // 0.0 - 1.0
     property int duration: 0     // 总时长（秒）
     property int position: 0     // 当前位置（秒）
+    // 毫秒级进度，用于歌词精确同步
+    property int positionMs: 0
     
     // 音乐显色（用于主题动态强调色）
     property color coverProminentColor: theme.defaultFocusColor // 采样得到的不透明主色（初始为默认强调色）
@@ -42,6 +44,20 @@ Rectangle {
     signal previousClicked()
     signal nextClicked()
     signal seekPositionChanged(real newPosition)
+
+    // 允许外部触发：封面点击等
+    onPlayClicked: {
+        if (mediaPlayer) mediaPlayer.play()
+    }
+    onPauseClicked: {
+        if (mediaPlayer) mediaPlayer.pause()
+    }
+    // 外部进度条拖动：newPosition 为 0.0-1.0 比例
+    onSeekPositionChanged: function(newPosition) {
+        if (mediaPlayer && mediaPlayer.duration > 0) {
+            mediaPlayer.position = Math.max(0, Math.min(1, newPosition)) * mediaPlayer.duration
+        }
+    }
     
     // C++ 元数据读取器
     AudioMetadata {
@@ -125,6 +141,8 @@ Rectangle {
         }
         
         onPositionChanged: {
+            // MediaPlayer.position 为毫秒
+            root.positionMs = position
             root.position = Math.floor(position / 1000)
             if (duration > 0) {
                 root.progress = position / duration
@@ -307,72 +325,12 @@ Rectangle {
 
                     // 设置波纹颜色（半透明）与主题显色（不透明）
                     var accent = Qt.rgba(outR / 255.0, outG / 255.0, outB / 255.0, 1.0)
-                    waveLayer.waveColor = Qt.rgba(accent.r, accent.g, accent.b, 0.35)
                     root.coverProminentColor = accent
                 }
             }
         }
 
-        // 柔和波纹效果（从专辑封面中心发出），不超出背景边界
-        Item {
-            id: waveLayer
-            anchors.fill: parent
-            z: 0.8
-            clip: true
-            visible: root.isPlaying && root.backgroundVisible && root.coverImage !== ""
-            property color waveColor: Qt.rgba(theme.focusColor.r, theme.focusColor.g, theme.focusColor.b, 0.25)
-
-            // 波纹圆环（3个错峰动画）
-            Repeater {
-                model: 3
-                Rectangle {
-                    id: ring
-                    color: "transparent"
-                    border.color: waveLayer.waveColor
-                    border.width: 2
-                    antialiasing: true
-                    smooth: true
-
-                    // 以背景容器内的专辑封面中心为波纹中心
-                    property var centerPoint: coverContainer.mapToItem(backgroundContainer, coverContainer.width / 2, coverContainer.height / 2)
-                    width: Math.min(backgroundContainer.width, backgroundContainer.height)
-                    height: width
-                    radius: width / 2
-                    x: centerPoint.x - width / 2
-                    y: centerPoint.y - height / 2
-
-                    opacity: 0.0
-
-                    transform: Scale {
-                        id: ringScale
-                        origin.x: ring.width / 2
-                        origin.y: ring.height / 2
-                        xScale: 0.2
-                        yScale: 0.2
-                    }
-
-                    SequentialAnimation on opacity {
-                        id: ringOpacityAnim
-                        running: waveLayer.visible
-                        loops: Animation.Infinite
-                        PauseAnimation { duration: index * 400 }
-                        NumberAnimation { to: 0.6; duration: 200; easing.type: Easing.OutQuad }
-                        NumberAnimation { to: 0.0; duration: 1400; easing.type: Easing.InQuad }
-                    }
-
-                    SequentialAnimation {
-                        id: ringScaleAnim
-                        running: waveLayer.visible
-                        loops: Animation.Infinite
-                        PauseAnimation { duration: index * 400 }
-                        ParallelAnimation {
-                            NumberAnimation { target: ringScale; property: "xScale"; from: 0.2; to: 1.0; duration: 1600; easing.type: Easing.OutCubic }
-                            NumberAnimation { target: ringScale; property: "yScale"; from: 0.2; to: 1.0; duration: 1600; easing.type: Easing.OutCubic }
-                        }
-                    }
-                }
-            }
-        }
+        
 
         // 圆角遮罩
         Item {
@@ -611,11 +569,20 @@ Rectangle {
                     smooth: true
                     property bool hovering: false
                     property bool dragging: false
+                    property real uiProgress: root.progress
+
+                    Timer {
+                        id: progressUiTimer
+                        interval: 100
+                        repeat: true
+                        running: true
+                        onTriggered: progressTrack.uiProgress = progressTrack.uiProgress + (root.progress - progressTrack.uiProgress) * 0.5
+                    }
 
                     // 进度填充容器（用于遮罩裁剪）
-                    Item {
-                        id: fillContainer
-                        width: progressTrack.width * root.progress
+                        Item {
+                            id: fillContainer
+                        width: progressTrack.width * progressTrack.uiProgress
                         height: progressTrack.height
                         anchors.verticalCenter: progressTrack.verticalCenter
                         z: 1
@@ -631,40 +598,14 @@ Rectangle {
                         }
 
                         // 遮罩形状（圆角胶囊）
-                        Item {
-                            id: fillMask
-                            anchors.fill: parent
-                            visible: false
-                            layer.enabled: true
-                            layer.smooth: true
-                            layer.samples: 4
-                            Rectangle {
-                                anchors.fill: parent
-                                radius: progressTrack.height / 2
-                                color: "black"
-                                antialiasing: true
-                                smooth: true
-                            }
-                        }
+                        
 
-                        // 使用遮罩裁剪填充，使窄宽也保持圆角
-                        MultiEffect {
-                            anchors.fill: fillContainer
-                            source: progressFillColor
-                            maskEnabled: true
-                            maskSource: fillMask
-                            autoPaddingEnabled: false
-                            antialiasing: true
-                        }
-
-                        Behavior on width {
-                            NumberAnimation { duration: 100 }
-                        }
+                        Behavior on width { enabled: progressTrack.dragging; NumberAnimation { duration: 100 } }
                     }
 
                     // 可拖动圆点
-                    Rectangle {
-                        id: handleDot
+                        Rectangle {
+                            id: handleDot
                         width: 12
                         height: 12
                         radius: 6
@@ -675,7 +616,7 @@ Rectangle {
                         smooth: true
                         z: 2
                         anchors.verticalCenter: progressTrack.verticalCenter
-                        x: Math.max(0, Math.min(progressTrack.width, progressTrack.width * root.progress)) - width / 2
+                        x: Math.max(0, Math.min(progressTrack.width, progressTrack.width * progressTrack.uiProgress)) - width / 2
                         opacity: (progressArea.containsMouse || progressTrack.dragging) ? 1.0 : 0.0
                         // 回弹动画使用的缩放系数
                         property real animScale: 1.0

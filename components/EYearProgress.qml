@@ -87,7 +87,7 @@ Item {
                 Text {
                     text: pctStr
                     color: accentColor
-                    font.pixelSize: 18
+                    font.pixelSize: 20
                     font.bold: true
                 }
                 Text {

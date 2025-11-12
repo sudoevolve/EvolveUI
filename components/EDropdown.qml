@@ -27,7 +27,13 @@ Item {
     property real pressedScale: 0.96
     property int popupSpacing: 8
 
-    width: 220
+    // === 弹出动画参数 ===
+    property int popupEnterDuration: 260
+    property int popupExitDuration: 200
+    property real popupSlideOffset: -12
+    property real popupScaleFrom: 0.98
+
+    width: 200
     height: headerHeight
 
     // 背景 + 文字分离（避免重影）
@@ -123,10 +129,21 @@ Item {
     Item {
         id: popupContainer
         width: root.width
-        y: headerContainer.height + root.popupSpacing
-        enabled: root.opened
-        visible: root.opened
-        opacity: root.opened ? 1 : 0
+        // 通过偏移实现下滑动画
+        property real popupOffsetY: 0
+        y: headerContainer.height + root.popupSpacing + popupOffsetY
+        // 改为按动画可见：打开或仍有不透明度时可见，避免立即隐藏打断动画
+        enabled: true
+        visible: opacity > 0 || root.opened
+        // 初始为隐藏，由状态控制 0/1（配合 Transition 实现动画）
+        opacity: 0
+
+        // 顶部基准的缩放（轻微回弹）
+        transform: Scale {
+            id: popupScale
+            origin.x: width / 2
+            origin.y: 0
+        }
 
         // 阴影（只作用于弹出背景）
         MultiEffect {
@@ -149,6 +166,9 @@ Item {
             clip: true
             height: Math.min(contentLayout.implicitHeight, root.popupMaxHeight)
 
+            // 弹出内容高度变化时的平滑动画
+            Behavior on height { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+
             ColumnLayout {
                 id: contentLayout
                 width: parent.width
@@ -160,6 +180,20 @@ Item {
                     Item {
                         width: parent.width
                         height: 40
+                        // 打开时淡入出现（轻微缩放）
+                        opacity: root.opened ? 1 : 0
+                        Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+
+                        transform: Scale {
+                            id: itemAppearScale
+                            origin.x: width / 2
+                            origin.y: height / 2
+                            xScale: root.opened ? 1.0 : 0.98
+                            yScale: root.opened ? 1.0 : 0.98
+                            // 将 Behavior 放到 Scale 对象上，避免绑定到不存在的 Item 属性
+                            Behavior on xScale { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                            Behavior on yScale { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                        }
 
                         Rectangle {
                             id: itemBg
@@ -211,9 +245,50 @@ Item {
             }
         }
 
-        // 动画
-        Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.InOutQuad } }
-        Behavior on height { NumberAnimation { duration: 250; easing.type: Easing.InOutQuad } }
+        // 状态与过渡：控制下滑 + 渐入 + 轻微回弹
+        states: [
+            State {
+                name: "closed"
+                when: !root.opened
+                PropertyChanges { target: popupContainer; popupOffsetY: popupSlideOffset }
+                PropertyChanges { target: popupContainer; opacity: 0 }
+                PropertyChanges { target: popupScale; xScale: popupScaleFrom; yScale: popupScaleFrom }
+            },
+            State {
+                name: "open"
+                when: root.opened
+                PropertyChanges { target: popupContainer; popupOffsetY: 0 }
+                PropertyChanges { target: popupContainer; opacity: 1 }
+                PropertyChanges { target: popupScale; xScale: 1.0; yScale: 1.0 }
+            }
+        ]
+
+        transitions: [
+            Transition {
+                from: "closed"; to: "open"
+                SequentialAnimation {
+                    ParallelAnimation {
+                        NumberAnimation { target: popupContainer; property: "popupOffsetY"; to: 0; duration: popupEnterDuration; easing.type: Easing.OutCubic }
+                        NumberAnimation { target: popupContainer; property: "opacity"; to: 1; duration: popupEnterDuration * 0.9; easing.type: Easing.OutCubic }
+                        NumberAnimation { target: popupScale; property: "xScale"; to: 1.02; duration: popupEnterDuration * 0.6; easing.type: Easing.OutCubic }
+                        NumberAnimation { target: popupScale; property: "yScale"; to: 1.02; duration: popupEnterDuration * 0.6; easing.type: Easing.OutCubic }
+                    }
+                    ParallelAnimation {
+                        NumberAnimation { target: popupScale; property: "xScale"; to: 1.0; duration: popupEnterDuration * 0.4; easing.type: Easing.OutCubic }
+                        NumberAnimation { target: popupScale; property: "yScale"; to: 1.0; duration: popupEnterDuration * 0.4; easing.type: Easing.OutCubic }
+                    }
+                }
+            },
+            Transition {
+                from: "open"; to: "closed"
+                ParallelAnimation {
+                    NumberAnimation { target: popupContainer; property: "popupOffsetY"; to: popupSlideOffset; duration: popupExitDuration; easing.type: Easing.InCubic }
+                    NumberAnimation { target: popupContainer; property: "opacity"; to: 0; duration: popupExitDuration * 0.9; easing.type: Easing.InCubic }
+                    NumberAnimation { target: popupScale; property: "xScale"; to: popupScaleFrom; duration: popupExitDuration * 0.6; easing.type: Easing.InCubic }
+                    NumberAnimation { target: popupScale; property: "yScale"; to: popupScaleFrom; duration: popupExitDuration * 0.6; easing.type: Easing.InCubic }
+                }
+            }
+        ]
     }
 
     // 点击外部关闭
