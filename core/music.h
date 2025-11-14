@@ -10,6 +10,8 @@
 #include <QMediaMetaData>
 #include <QTimer>
 #include <QFileSystemWatcher>
+#include <QHash>
+#include <QVariantMap>
 
 class QMediaPlayer;
 class QAudioOutput;
@@ -87,11 +89,16 @@ public:
     // 新增：歌词支持（返回文本或文件URL）
     Q_INVOKABLE QString loadLyricsText(const QString &source);
     Q_INVOKABLE QString findLyricsFileForSource(const QString &source);
+    Q_INVOKABLE QVariantMap getMetadata(const QString &source);
+    Q_INVOKABLE void prefetchMetadata(const QStringList &files);
+    Q_INVOKABLE QStringList scanOnlyDirectory(const QString &path);
     
     // 新增：文件监控功能
     Q_INVOKABLE void startWatching();
     Q_INVOKABLE void stopWatching();
     Q_INVOKABLE bool isWatching() const;
+    Q_INVOKABLE void addWatchDirectory(const QString &path);
+    Q_INVOKABLE void startWatchingSingle(const QString &path);
     
     // 新增：缓存和性能优化
     Q_INVOKABLE void clearCache();
@@ -102,17 +109,28 @@ signals:
     void musicFilesChanged(const QStringList &newFiles);
     void fileAdded(const QString &filePath);
     void fileRemoved(const QString &filePath);
+    void metadataReady(const QString &source, const QVariantMap &meta);
 
 private slots:
     void onDirectoryChanged(const QString &path);
     void onFileChanged(const QString &path);
     void performDelayedScan();
+    void processNextPrefetch();
+    void onPrefetchMetaDataChanged();
+    void onPrefetchDurationChanged(qint64 duration);
 
 private:
     QString findProjectRootFromAppDir() const;
     QStringList getValidMusicExtensions() const;
     void addWatchPath(const QString &path);
     void updateFileCache();
+    QMediaPlayer *m_prefetchPlayer;
+    QAudioOutput *m_prefetchOutput;
+    QStringList m_prefetchQueue;
+    bool m_prefetchActive;
+    QString m_currentPrefetchSource;
+    QHash<QString, QVariantMap> m_metaCache;
+    bool m_singleMode = false;
     
     QFileSystemWatcher *m_watcher;
     QTimer *m_scanTimer;

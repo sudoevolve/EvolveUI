@@ -5,15 +5,15 @@ import QtQuick.Effects
 //  C++ 侧读取歌词
 import MusicLibrary 1.0
 
-Item {
-    id: root
-    anchors.fill: parent
-    clip: true
+    Item {
+        id: root
+        anchors.fill: parent
+        clip: true
 
-    
+        
 
-    // 主题从外部传入
-    property var theme
+        // 主题从外部传入
+        property var theme
 
     // 音乐窗口作用域数据（外部 EAnimatedWindow 传入）
     property string coverImage: ""
@@ -22,19 +22,23 @@ Item {
     property string artist: "未知艺术家"
     property var sourceItem: null
     // 歌词数据：解析自 LRC，[{ t:毫秒, text:字符串 }]
-    property var lyricsEntries: []
-    property int currentLyricIndex: -1
-    property bool lyricsAvailable: false
-    property string lyricsFilePath: ""
+        property var lyricsEntries: []
+        property int currentLyricIndex: -1
+        property bool lyricsAvailable: false
+        property string lyricsFilePath: ""
+        property bool isLyricScrolling: false
     // 封面显示控制：
     property string displayCoverImage: ""
     property bool displayCoverIsDefault: true
     property string pendingCoverUrl: ""
     property int coverFadeDuration: 1920
     property string circleCoverImage: ""
+    property int coverCircleTex: 340
+        property int coverTexW: 256
+        property int coverTexH: 144
 
     // 首次进入或外部赋值 sourceItem 时，初始化文案/歌词/封面
-    onSourceItemChanged: {
+        onSourceItemChanged: {
         if (!sourceItem) {
             title = "未知歌曲"
             artist = "未知艺术家"
@@ -46,6 +50,11 @@ Item {
             lyricsFilePath = ""
             currentLyricIndex = -1
             return
+        }
+
+        onCurrentLyricIndexChanged: {
+            isLyricScrolling = true
+            lyricScrollFlagTimer.restart()
         }
 
         if (typeof sourceItem.songTitle === "string") title = sourceItem.songTitle
@@ -221,6 +230,13 @@ Item {
         source: "qrc:/new/prefix1/fonts/fontawesome-free-6.7.2-desktop/otfs/Font Awesome 6 Free-Solid-900.otf"
     }
 
+    Timer {
+        id: lyricScrollFlagTimer
+        interval: 420
+        repeat: false
+        onTriggered: root.isLyricScrolling = false
+    }
+
     // 纯色底（始终存在，作为模糊封面之下的回退层）
     Rectangle {
         anchors.fill: parent
@@ -234,11 +250,12 @@ Item {
         visible: false
         source: displayCoverIsDefault ? "" : displayCoverImage
         fillMode: Image.PreserveAspectCrop
-        cache: false
+        cache: true
         asynchronous: false
         antialiasing: true
         smooth: true
-        mipmap: true
+        mipmap: false
+        sourceSize: Qt.size(coverTexW, coverTexH)
     }
     Image {
         id: fullscreenCoverSourceNext
@@ -246,11 +263,12 @@ Item {
         visible: false
         source: ""
         fillMode: Image.PreserveAspectCrop
-        cache: false
+        cache: true
         asynchronous: false
         antialiasing: true
         smooth: true
-        mipmap: true
+        mipmap: false
+        sourceSize: Qt.size(coverTexW, coverTexH)
     }
 
     // 下一个封面预加载（隐藏），准备好后再切换
@@ -260,11 +278,12 @@ Item {
         visible: false
         source: pendingCoverUrl
         fillMode: Image.PreserveAspectCrop
-        cache: false
+        cache: true
         asynchronous: false
         antialiasing: true
         smooth: true
-        mipmap: true
+        mipmap: false
+        sourceSize: Qt.size(coverTexW, coverTexH)
         onStatusChanged: {
             if (status === Image.Ready && pendingCoverUrl && pendingCoverUrl.length > 0) {
                 fullscreenCoverSourceNext.source = pendingCoverUrl
@@ -376,12 +395,13 @@ Item {
             anchors.fill: parent
             source: circleCoverImage
             fillMode: Image.PreserveAspectCrop
-            cache: false
+            cache: true
             asynchronous: false
             visible: false
             antialiasing: true
             smooth: true
-            mipmap: true
+            mipmap: false
+            sourceSize: Qt.size(coverCircleTex, coverCircleTex)
         }
 
         ShaderEffectSource {
@@ -549,7 +569,7 @@ Item {
     Item {
         id: lyricsPanel
         anchors.left: rotatingCoverContainer.right
-        anchors.leftMargin: 170
+        anchors.leftMargin: 150
         anchors.right: parent.right
         anchors.rightMargin: 40
         anchors.verticalCenter: parent.verticalCenter
@@ -584,8 +604,8 @@ Item {
             ListView {
                 id: lyricList
                 width: parent.width
-                // 限制最多显示13行
-                readonly property int maxVisibleLines: 13
+                // 限制最多显示10行
+                readonly property int maxVisibleLines: 10
                 readonly property int rowHeight: 28
                 readonly property int rowSpacing: 10
                 height: Math.min(lyricsPanel.height - 42, maxVisibleLines * rowHeight + (maxVisibleLines - 1) * rowSpacing)
@@ -594,6 +614,8 @@ Item {
                 boundsBehavior: Flickable.StopAtBounds
                 model: lyricsAvailable ? lyricsEntries : [ { text: "未找到歌词" } ]
                 currentIndex: currentLyricIndex
+                cacheBuffer: height
+                reuseItems: true
                 // 高亮移动与范围：将当前行保持在视图偏上的位置
                 highlightMoveDuration: 380
                 highlightFollowsCurrentItem: true
@@ -632,10 +654,12 @@ Item {
                         anchors.fill: parent
                         // 顶/底部渐隐：靠近边缘逐步降低整体不透明度
                         opacity: (isActive ? 1.0 : 0.6) * edgeFactor
-                        Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                        Behavior on opacity { enabled: !root.isLyricScrolling; NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
                         // 放大动画使当前行视觉更突出
                         scale: isActive ? 1.06 : 1.0
                         Behavior on scale { NumberAnimation { duration: 360; easing.type: Easing.OutCubic } }
+                        layer.enabled: isActive
+                        layer.smooth: true
 
                         // 底层普通颜色文本（非当前行透明度为 0.6）
                         Text {
@@ -645,9 +669,8 @@ Item {
                             text: modelData.text
                             wrapMode: Text.NoWrap
                             horizontalAlignment: Text.AlignLeft
-                            font.pixelSize: isActive ? 22 : 18
+                            font.pixelSize: 20
                             font.bold: isActive
-                            font.weight: isActive ? Font.DemiBold : Font.Normal
                             color: theme ? theme.textColor : "#ffffff"
                             opacity: isActive ? 1.0 : 0.6
                         }
@@ -672,9 +695,8 @@ Item {
                                 text: modelData.text
                                 wrapMode: Text.NoWrap
                                 horizontalAlignment: Text.AlignLeft
-                                font.pixelSize: isActive ? 22 : 18
+                                font.pixelSize: 20
                                 font.bold: isActive
-                                font.weight: isActive ? Font.DemiBold : Font.Normal
                                 color: theme ? theme.focusColor : "#00C4B3"
                             }
                         }
@@ -835,7 +857,7 @@ Item {
                 // 下一曲
                 Text {
                     id: nextIcon
-                    text: "\uf051"
+                    text: "\uf04e"
                     font.family: iconFont.name
                     font.pixelSize: 20
                     color: nextArea.pressed ? (theme ? theme.focusColor : "#00C4B3") : (theme ? theme.textColor : "#ffffff")

@@ -319,6 +319,7 @@ ApplicationWindow {
             anchors.rightMargin: 40
             flickableDirection: Flickable.VerticalFlick
             clip: false
+            // 抽屉内部自行拦截滚动与点击；主体保持交互
             contentWidth: pages.currentItem ? Math.max(flowContent.implicitWidth, pages.currentItem.width + 48) : flowContent.implicitWidth
             contentHeight: pages.currentItem ? Math.max(flowContent.implicitHeight, pages.currentItem.height + 48) : flowContent.implicitHeight
 
@@ -367,16 +368,16 @@ ApplicationWindow {
                     if (item && item.viewportWidth !== undefined) item.viewportWidth = flickable.width - 60
                 }
             }
-            Loader {
-                id: otherLoader
-                source: "pages/OtherComponents.qml"
-                active: false  // 初始不加载，首次切换时才加载
-                visible: pages.currentIndex === 2
-                onLoaded: {
-                    if (item && !item.theme) item.theme = theme
-                    if (item && item.viewportWidth !== undefined) item.viewportWidth = flickable.width - 60
-                }
+        Loader {
+            id: otherLoader
+            source: "pages/OtherComponents.qml"
+            active: true  // 提前加载以提供音乐播放器与播放列表给抽屉
+            visible: pages.currentIndex === 2
+            onLoaded: {
+                if (item && !item.theme) item.theme = theme
+                if (item && item.viewportWidth !== undefined) item.viewportWidth = flickable.width - 60
             }
+        }
         }
 
 
@@ -411,59 +412,33 @@ ApplicationWindow {
 
     Components.EDrawer {
         id: drawer1
-        width: 300
+        panelWidth: 300
         opened: false
         backgroundVisible: true
         anchors.right: parent.right
-        anchors.rightMargin: -30
+        anchors.rightMargin: -24
         padding: 30
 
         // 插入内容
-        Components.ECheckBox {
-            model: [
-                    { text: "选项 A" },
-                    { text: "选项 B" },
-                    { text: "选项 C" },
-                    { text: "选项 D" }
-                ]
-
-                onSelectionChanged: (indexes, items) => {
-                    console.log("当前勾选索引：", indexes)
-                    console.log("当前勾选项：", JSON.stringify(items))
-                }
-        }
-
-        Components.ERadioButton {
-            model: [
-                    { text: "男" },
-                    { text: "女" },
-                    { text: "沃尔玛塑料袋" },
-                    { text: "武装直升机" }
-                ]
-
-                onSelectionChanged: (index, item) => {
-                    console.log("当前勾选索引：", index)
-
-                }
-        }
-
-        Components.EDropdown {
-            model: [
-                { text: "番茄炒鸡蛋" },
-                { text: "紫菜汤" },
-                { text: "凉拌粉丝" },
-                { text: "红烧排骨" }
-            ]
-
-            onSelectionChanged: function(index, data) {
-                console.log("选中索引:", index, " 文本:", data.text)
-            }
+        Components.EPlaylist {
+            width: parent.width
+            height: parent.height - 60
+            theme: theme
+            model: otherLoader.item ? otherLoader.item.musicPlayerRef.playlistModelRef : null
+            playerRef: otherLoader.item ? otherLoader.item.musicPlayerRef : null
         }
     }
 
     Components.EAnimatedWindow {
         id: animationWrapper1
         Components.Aboutme {}
+        // 用头像作为源，启动后自动打开，确保关闭回到头像位置
+        Timer {
+            interval: 30
+            running: true
+            repeat: false
+            onTriggered: animationWrapper1.open(avatar)
+        }
     }
 
     Components.EAnimatedWindow {

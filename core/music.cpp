@@ -162,6 +162,9 @@ MusicLibrary::MusicLibrary(QObject *parent)
     , m_watcher(new QFileSystemWatcher(this))
     , m_scanTimer(new QTimer(this))
     , m_isWatching(false)
+    , m_prefetchPlayer(new QMediaPlayer(this))
+    , m_prefetchOutput(new QAudioOutput(this))
+    , m_prefetchActive(false)
 {
     // 配置扫描定时器
     m_scanTimer->setSingleShot(true);
@@ -175,6 +178,12 @@ MusicLibrary::MusicLibrary(QObject *parent)
             this, &MusicLibrary::onFileChanged);
     connect(m_scanTimer, &QTimer::timeout,
             this, &MusicLibrary::performDelayedScan);
+
+    m_prefetchPlayer->setAudioOutput(m_prefetchOutput);
+    connect(m_prefetchPlayer, &QMediaPlayer::metaDataChanged,
+            this, &MusicLibrary::onPrefetchMetaDataChanged);
+    connect(m_prefetchPlayer, &QMediaPlayer::durationChanged,
+            this, &MusicLibrary::onPrefetchDurationChanged);
 }
 
 QStringList MusicLibrary::scanMusicFiles(const QString &rootPath, bool recursive)
@@ -182,7 +191,14 @@ QStringList MusicLibrary::scanMusicFiles(const QString &rootPath, bool recursive
     QStringList musicFiles;
     if (rootPath.isEmpty()) return musicFiles;
 
-    QDir dir(rootPath);
+    QString normalized = rootPath;
+    if (rootPath.startsWith("file:")) {
+        QUrl u(rootPath);
+        if (u.isValid()) normalized = u.toLocalFile();
+    }
+    normalized = QDir::fromNativeSeparators(normalized);
+
+    QDir dir(normalized);
     if (!dir.exists()) return musicFiles;
 
     QStringList extensions = getValidMusicExtensions();
@@ -192,7 +208,7 @@ QStringList MusicLibrary::scanMusicFiles(const QString &rootPath, bool recursive
     }
 
     QDirIterator::IteratorFlag flag = recursive ? QDirIterator::Subdirectories : QDirIterator::NoIteratorFlags;
-    QDirIterator it(rootPath, nameFilters, QDir::Files, flag);
+    QDirIterator it(normalized, nameFilters, QDir::Files, flag);
 
     while (it.hasNext()) {
         QString filePath = it.next();
@@ -200,6 +216,8 @@ QStringList MusicLibrary::scanMusicFiles(const QString &rootPath, bool recursive
             musicFiles.append(filePath);
         }
     }
+
+    qDebug() << "scanMusicFiles:" << normalized << "recursive=" << recursive << "found=" << musicFiles.size();
 
     return musicFiles;
 }
@@ -255,10 +273,10 @@ QStringList MusicLibrary::scanAllAvailableMusic(bool recursive)
     QStringList projectMusic = scanDefaultProjectMusic(recursive);
     allMusic.append(projectMusic);
     
-    // 如果项目中没有音乐文件，则扫描Windows音乐文件夹
-    if (projectMusic.isEmpty()) {
-        QStringList windowsMusic = scanWindowsMusic(recursive);
-        allMusic.append(windowsMusic);
+    // 始终合并Windows音乐文件夹，避免项目有少量文件时遗漏用户库
+    QStringList windowsMusic = scanWindowsMusic(recursive);
+    for (const QString &p : windowsMusic) {
+        if (!allMusic.contains(p)) allMusic.append(p);
     }
     
     // 更新缓存
@@ -349,6 +367,71 @@ QString MusicLibrary::loadLyricsText(const QString &source)
     return QString();
 }
 
+QVariantMap MusicLibrary::getMetadata(const QString &source)
+{
+    return m_metaCache.value(source);
+}
+
+void MusicLibrary::prefetchMetadata(const QStringList &files)
+{
+    for (const QString &f : files) {
+        if (f.isEmpty()) continue;
+        QString local = f;
+        if (f.startsWith("file:")) {
+            QUrl u(f);
+            if (u.isValid()) local = u.toLocalFile();
+        }
+        if (!isValidMusicFile(local)) continue;
+        if (!m_prefetchQueue.contains(local) && !m_metaCache.contains(local)) m_prefetchQueue.append(local);
+    }
+    if (!m_prefetchActive) {
+        m_prefetchActive = true;
+        QTimer::singleShot(0, this, &MusicLibrary::processNextPrefetch);
+    }
+}
+
+void MusicLibrary::processNextPrefetch()
+{
+    if (m_prefetchQueue.isEmpty()) {
+        m_prefetchActive = false;
+        m_currentPrefetchSource.clear();
+        return;
+    }
+    m_currentPrefetchSource = m_prefetchQueue.takeFirst();
+    if (m_currentPrefetchSource.startsWith("qrc:/")) {
+        m_prefetchPlayer->setSource(QUrl(m_currentPrefetchSource));
+    } else {
+        m_prefetchPlayer->setSource(QUrl::fromLocalFile(m_currentPrefetchSource));
+    }
+    if (m_prefetchOutput) m_prefetchOutput->setVolume(0.0);
+    m_prefetchPlayer->play();
+}
+
+void MusicLibrary::onPrefetchMetaDataChanged()
+{
+    if (m_currentPrefetchSource.isEmpty()) return;
+    const QMediaMetaData md = m_prefetchPlayer->metaData();
+    QVariantMap meta;
+    QString title = md.value(QMediaMetaData::Title).toString();
+    QString artist;
+    if (md.value(QMediaMetaData::AlbumArtist).isValid()) artist = md.value(QMediaMetaData::AlbumArtist).toString();
+    else if (md.value(QMediaMetaData::ContributingArtist).isValid()) artist = md.value(QMediaMetaData::ContributingArtist).toString();
+    meta.insert("title", title);
+    meta.insert("artist", artist);
+    meta.insert("duration", m_prefetchPlayer->duration());
+    m_metaCache.insert(m_currentPrefetchSource, meta);
+    emit metadataReady(m_currentPrefetchSource, meta);
+    QTimer::singleShot(1, this, &MusicLibrary::processNextPrefetch);
+}
+
+void MusicLibrary::onPrefetchDurationChanged(qint64 duration)
+{
+    if (m_currentPrefetchSource.isEmpty()) return;
+    auto meta = m_metaCache.value(m_currentPrefetchSource);
+    meta.insert("duration", static_cast<int>(duration));
+    m_metaCache.insert(m_currentPrefetchSource, meta);
+}
+
 // 新增：文件监控功能
 void MusicLibrary::startWatching()
 {
@@ -390,6 +473,16 @@ void MusicLibrary::stopWatching()
 bool MusicLibrary::isWatching() const
 {
     return m_isWatching;
+}
+
+void MusicLibrary::addWatchDirectory(const QString &path)
+{
+    QString local = path;
+    if (path.startsWith("file:")) {
+        QUrl u(path);
+        if (u.isValid()) local = u.toLocalFile();
+    }
+    addWatchPath(local);
 }
 
 // 新增：缓存管理
@@ -453,8 +546,15 @@ void MusicLibrary::performDelayedScan()
     }
     m_lastScanMs = now;
     
-    // 重新扫描所有音乐文件
-    QStringList newFiles = scanAllAvailableMusic(true);
+    // 重新扫描当前监控路径
+    QStringList newFiles;
+    if (!m_watchedPaths.isEmpty()) {
+        for (const QString &p : m_watchedPaths) {
+            newFiles += scanMusicFiles(p, true);
+        }
+    } else {
+        newFiles = scanAllAvailableMusic(true);
+    }
     
     // 检查是否有变化
     if (newFiles != m_cachedFiles) {
@@ -502,12 +602,17 @@ void MusicLibrary::performDelayedScan()
 // 新增：辅助方法
 QStringList MusicLibrary::getValidMusicExtensions() const
 {
-    return QStringList() << "mp3" << "m4a" << "flac" << "wav" << "ogg" << "aac";
+    return QStringList() << "mp3" << "m4a" << "flac" << "wav" << "ogg" << "aac" << "wma";
 }
 
 bool MusicLibrary::isValidMusicFile(const QString &filePath) const
 {
-    QFileInfo fileInfo(filePath);
+    QString local = filePath;
+    if (filePath.startsWith("file:")) {
+        QUrl u(filePath);
+        if (u.isValid()) local = u.toLocalFile();
+    }
+    QFileInfo fileInfo(local);
     if (!fileInfo.exists() || !fileInfo.isFile()) {
         return false;
     }
@@ -535,4 +640,35 @@ void MusicLibrary::addWatchPath(const QString &path)
 void MusicLibrary::updateFileCache()
 {
     m_cachedFiles = scanAllAvailableMusic(true);
+}
+
+QStringList MusicLibrary::scanOnlyDirectory(const QString &path)
+{
+    QString local = path;
+    if (path.startsWith("file:")) {
+        QUrl u(path);
+        if (u.isValid()) local = u.toLocalFile();
+    }
+    local = QDir::fromNativeSeparators(local);
+    stopWatching();
+    m_watchedPaths.clear();
+    m_isWatching = true;
+    addWatchPath(local);
+    QStringList files = scanMusicFiles(local, true);
+    m_cachedFiles = files;
+    emit musicFilesChanged(files);
+    return files;
+}
+
+void MusicLibrary::startWatchingSingle(const QString &path)
+{
+    stopWatching();
+    m_isWatching = true;
+    m_watchedPaths.clear();
+    QString local = path;
+    if (path.startsWith("file:")) {
+        QUrl u(path);
+        if (u.isValid()) local = u.toLocalFile();
+    }
+    addWatchPath(local);
 }

@@ -66,6 +66,7 @@ qt_add_qml_module(appEvolveUI
         components/ESimpleDatePicker.qml
         components/EAlertDialog.qml
         components/ELoader.qml
+        components/EPlaylist.qml
         pages/BaseComponents.qml
         pages/NoBackgroundComponents.qml
         pages/OtherComponents.qml

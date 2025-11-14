@@ -10,8 +10,8 @@ import MusicLibrary 1.0
 Rectangle {
     id: root
 
-    // === 接口属性 ===
-    property string source: ""   // 音频文件路径
+        // === 接口属性 ===
+        property string source: ""   // 音频文件路径
     property string songTitle: "未知歌曲"
     property string artistName: "未知艺术家"
     property string coverImage: ""
@@ -23,6 +23,69 @@ Rectangle {
     property int position: 0     // 当前位置（秒）
     // 毫秒级进度，用于歌词精确同步
     property int positionMs: 0
+    property alias playlistModelRef: playlistModel
+    function playSourcePath(p) {
+        if (!p || p.length === 0) return
+        var src = p
+        if (typeof p === 'string' && p.indexOf('file:///') === 0) {
+            src = decodeURIComponent(p.substring(8))
+        }
+        if (musicLibrary && musicLibrary.isValidMusicFile && !musicLibrary.isValidMusicFile(src)) return
+        if (root.playlistModelRef && typeof root.playlistModelRef.get === "function") {
+            var found = -1
+            for (var i = 0; i < root.playlistModelRef.count; i++) {
+                var it = root.playlistModelRef.get(i)
+                if (it && (it.source === src || it.source === p)) { found = i; break }
+            }
+            if (found >= 0) { playAt(found); return }
+        }
+        mediaPlayer.stop()
+        root.source = src
+        mediaPlayer.play()
+    }
+
+    function addSources(sources) {
+        if (!sources || !playlistModel) return
+        for (var i = 0; i < sources.length; i++) {
+            var s = sources[i]
+            if (typeof s === 'string' && s.indexOf('file:///') === 0) s = decodeURIComponent(s.substring(8))
+            var exists = false
+            for (var j = 0; j < playlistModel.count; j++) {
+                var it = playlistModel.get(j)
+                if (it && it.source === s) { exists = true; break }
+            }
+            if (!exists) playlistModel.append({ source: s })
+        }
+        if (!root.isPlaying && playlistModel.count > 0) {
+            root.source = playlistModel.get(0).source
+        }
+    }
+
+    function resetSources(sources) {
+        if (!playlistModel) return
+        playlistModel.clear()
+        addSources(sources)
+        if (playlistModel.count > 0) {
+            currentIndex = 0
+            root.source = playlistModel.get(0).source
+        }
+    }
+
+    function stopPlayback() {
+        if (mediaPlayer) mediaPlayer.stop()
+        root.source = ""
+        root.songTitle = "未知歌曲"
+        root.artistName = "未知艺术家"
+        root.coverImage = ""
+        root.coverImageIsDefault = true
+        root.isPlaying = false
+        root.progress = 0.0
+        root.duration = 0
+        root.position = 0
+        root.positionMs = 0
+    }
+        // 播放模式：0=循环，1=单曲循环，2=随机
+        property int playMode: 0
     
     // 音乐显色（用于主题动态强调色）
     property color coverProminentColor: theme.defaultFocusColor // 采样得到的不透明主色（初始为默认强调色）
@@ -156,6 +219,19 @@ Rectangle {
         onMetaDataChanged: {
             console.log("QML MediaPlayer元数据已更改（已由C++处理）")
         }
+
+        onMediaStatusChanged: {
+            if (mediaStatus === MediaPlayer.EndOfMedia) {
+                if (root.playMode === 1) {
+                    mediaPlayer.position = 0
+                    mediaPlayer.play()
+                } else if (root.playMode === 2) {
+                    root.playRandom()
+                } else {
+                    root.playNext()
+                }
+            }
+        }
     }
     // === 样式属性 ===
     property real radius: 20
@@ -207,7 +283,7 @@ Rectangle {
             fillMode: Image.PreserveAspectCrop
             cache: false
             asynchronous: false
-            sourceSize: Qt.size(Math.round(width), Math.round(height))
+            sourceSize: Qt.size(Math.round(width * 0.5), Math.round(height * 0.5))
             visible: false
             antialiasing: true
             smooth: true
@@ -422,7 +498,7 @@ Rectangle {
                 fillMode: Image.PreserveAspectCrop
                 cache: false
                 asynchronous: true
-                sourceSize: Qt.size(Math.round(width), Math.round(height))
+                sourceSize: Qt.size(Math.round(width * 0.6), Math.round(height * 0.6))
                 visible: false
                 antialiasing: true
                 smooth: true
@@ -847,69 +923,60 @@ Rectangle {
                     }
                 }
 
-                // 刷新按钮
-                Text {
-                    id: refreshButton
-                    text: "\uf021" // FontAwesome 刷新图标
-                    font.family: iconFont.name
-                    font.pixelSize: root.itemIconSize - 2
-                    color: refreshArea.pressed ? theme.focusColor : theme.textColor
-                    verticalAlignment: Text.AlignVCenter
-                    opacity: 0.8
+                // 播放模式切换：循环 / 单曲循环 / 随机
+                Item {
+                    id: playModeButton
+                    width: (root.itemIconSize + 2)
+                    height: (root.itemIconSize + 2)
+                    opacity: 0.9
 
-                    // 旋转变换
-                    transform: Rotation {
-                        id: refreshRotationTransform
-                        origin.x: refreshButton.width / 2
-                        origin.y: refreshButton.height / 2
-                        angle: 0
+                    // 图标：循环(
+                    // \uf01e)、随机(\uf074)。单曲循环在循环图标叠加"1"标记
+                    Text {
+                        id: playModeIcon
+                        anchors.centerIn: parent
+                        text: (root.playMode === 2) ? "\uf074" : "\uf021"
+                        font.family: iconFont.name
+                        font.pixelSize: root.itemIconSize
+                        color: playModeArea.pressed ? theme.focusColor : theme.textColor
+                        verticalAlignment: Text.AlignVCenter
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+
+                    // 单曲循环标记
+                    Text {
+                        id: repeatOneBadge
+                        text: "1"
+                        visible: root.playMode === 1
+                        anchors.centerIn: parent
+                        z: 2
+                        font.pixelSize: Math.max(10, root.itemIconSize * 0.6)
+                        color: playModeArea.pressed ? theme.focusColor : Qt.lighter(theme.textColor, 1.1)
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
                     }
 
                     MouseArea {
-                        id: refreshArea
+                        id: playModeArea
                         anchors.fill: parent
                         anchors.margins: -5
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            console.log("手动刷新音乐列表")
-                            refreshRotationAnimation.start()
-                            loadProjectPlaylist()
+                            root.playMode = (root.playMode + 1) % 3
+                            console.log("播放模式切换为:", root.playMode === 0 ? "循环" : (root.playMode === 1 ? "单曲循环" : "随机"))
                         }
-
-                        // 缩放效果
                         onPressed: {
-                            parent.scale = root.pressedScale
+                            playModeButton.scale = root.pressedScale
                         }
                         onReleased: {
-                            parent.scale = 1.0
+                            playModeButton.scale = 1.0
                         }
                         onCanceled: {
-                            parent.scale = 1.0
+                            playModeButton.scale = 1.0
                         }
                     }
 
-                    Behavior on scale {
-                        NumberAnimation { duration: 100 }
-                    }
-
-                    // 旋转动画
-                    SequentialAnimation {
-                        id: refreshRotationAnimation
-                        
-                        NumberAnimation {
-                            target: refreshRotationTransform
-                            property: "angle"
-                            from: 0
-                            to: 360
-                            duration: 600
-                            easing.type: Easing.OutCubic
-                        }
-                        
-                        // 重置角度
-                        ScriptAction {
-                            script: refreshRotationTransform.angle = 0
-                        }
-                    }
+                    Behavior on scale { NumberAnimation { duration: 100 } }
                 }
 
             }
@@ -1050,14 +1117,27 @@ Rectangle {
 
     function playNext() {
         if (playlistModel.count === 0) return
+        if (root.playMode === 2) { playRandom(); return }
         var next = (currentIndex + 1) % playlistModel.count
         playAt(next)
     }
 
     function playPrev() {
         if (playlistModel.count === 0) return
+        if (root.playMode === 2) { playRandom(); return }
         var prev = (currentIndex - 1 + playlistModel.count) % playlistModel.count
         playAt(prev)
+    }
+
+    function playRandom() {
+        if (playlistModel.count === 0) return
+        var next = currentIndex
+        if (playlistModel.count > 1) {
+            do {
+                next = Math.floor(Math.random() * playlistModel.count)
+            } while (next === currentIndex)
+        }
+        playAt(next)
     }
 
     Component.onCompleted: {

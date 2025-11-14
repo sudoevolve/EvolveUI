@@ -68,6 +68,7 @@ Item {
             smooth: true
             asynchronous: true
             mipmap: true
+            sourceSize: Qt.size(Math.round(width), Math.round(height))
 
             // 当随机图为 WebP 且当前环境不支持解码时，自动回退到 Bing 壁纸
             onStatusChanged: {
@@ -313,7 +314,7 @@ Item {
         onTriggered: fetchQuote()
     }
 
-    // 每天刷新 Bing 背景
+    // 每天刷新背景
     Timer {
         interval: bingRefreshIntervalMs
         running: true
