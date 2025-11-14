@@ -337,7 +337,7 @@ Flow {
 
     Components.EAccordion {
         backgroundVisible: false
-        width: 850
+        width: 830
         title: "用户协议"
 
         // 直接组件放这里ColumnLayout来自动排列

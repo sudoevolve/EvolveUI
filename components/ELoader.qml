@@ -11,7 +11,7 @@ Item {
     property real size: 40
     property real speed: 0.8        // 秒
     property color color: theme ? theme.focusColor : "#5D3FD3"
-    property bool running: true
+    property bool running: true //实例化之后会一直运算导致性能问题，请在此组件不可见时绑定为false，
 
     // 内部计算
     property int spinDuration: Math.round(speed * 2500)  // 容器旋转：speed * 2.5s
@@ -35,7 +35,7 @@ Item {
         to: 360
         duration: spinDuration
         loops: Animation.Infinite
-        running: root.running
+        running: root.running && root.visible
         easing.type: Easing.Linear
     }
 
@@ -66,7 +66,7 @@ Item {
         // Dot1 摆动动画（含延迟）
         SequentialAnimation {
             id: wobble1
-            running: root.running
+            running: root.running && root.visible
             loops: Animation.Infinite
             PauseAnimation { duration: delay1 }
             ParallelAnimation {
@@ -110,7 +110,7 @@ Item {
         // Dot2 摆动动画（含延迟）
         SequentialAnimation {
             id: wobble2
-            running: root.running
+            running: root.running && root.visible
             loops: Animation.Infinite
             PauseAnimation { duration: delay2 }
             ParallelAnimation {
@@ -151,7 +151,7 @@ Item {
 
         // wobble2：向下位移
         SequentialAnimation {
-            running: root.running
+            running: root.running && root.visible
             loops: Animation.Infinite
             ParallelAnimation {
                 NumberAnimation { target: c3; property: "y"; to: (dot3.height - c3.height) + (dot3.height * 0.66); duration: wobbleHalf; easing.type: Easing.InOutQuad }

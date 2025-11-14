@@ -8,8 +8,10 @@ Flow {
     property var openMusicWindow
     // 可视区域宽度（由 Main.qml 传入并保持同步）
     property int viewportWidth: 0
+    property var musicPlayerRef: musicPlayer
     spacing: 16
     width: viewportWidth > 0 ? viewportWidth : 850
+
 
     Rectangle {
         width: parent.width
@@ -63,6 +65,7 @@ Flow {
     Components.EClock {
 
     }
+
 
     // 数字时钟卡片（使用网络天气，图标随天气自动切换）
     Components.EClockCard {
@@ -127,25 +130,68 @@ Flow {
 
     Rectangle {
         width: parent.width
-        height: 150
-        color: "transparent"
-        // 占位用，制造空白
-    }
-
-    Rectangle {
-        width: 400
         height: 50
         color: "transparent"
-        // 占位用，制造空白
+        // 标题 + 开关
+        RowLayout {
+            anchors.fill: parent
+            anchors.margins: 8
+            spacing: 12
+
+            Text {
+                text: "🧠实验性功能："
+                font.pixelSize: 20
+                font.bold: true
+                color: theme.textColor
+                Layout.alignment: Qt.AlignVCenter
+                Layout.fillWidth: true
+            }
+
+            Components.ESwitchButton {
+                id: experimentalSwitch
+                text: checked ? "已开启" : "关闭"
+                Layout.alignment: Qt.AlignVCenter
+                onToggled: experimentalLoader.active = checked
+            }
+        }
     }
 
-/*占用gpu过高
-    Components.ELoader {
-        size: 50
-        x: 150
-        speed: 0.8
+    Loader {
+        id: experimentalLoader
+        active: experimentalSwitch.checked
+        sourceComponent: Component {
+            Column {
+                spacing: 12
+
+
+                Rectangle {
+                    width: parent.width
+                    height: 150
+                    color: "transparent"
+                    // 占位用，制造空白
+                }
+
+                Rectangle {
+                    width: 400
+                    height: 50
+                    color: "transparent"
+                    // 占位用，制造空白
+                }
+
+
+                Components.ELoader {
+                    size: 50
+                    x: 350
+                    speed: 0.8
+                    running: experimentalSwitch.checked
+                }
+
+            }
+        }
     }
-*/
+
+
+
 
     Rectangle {
         width: parent.width
@@ -154,6 +200,5 @@ Flow {
         // 占位用，制造空白
     }
 }
-
 
 

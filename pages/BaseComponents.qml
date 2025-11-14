@@ -339,7 +339,7 @@ Flow {
     }
 
     Components.EAccordion {
-        width: 850
+        width: 830
         title: "用户协议"
 
         // 直接把你的组件放在这里ColumnLayout来自动排列
@@ -358,12 +358,11 @@ Flow {
             color: theme.textColor
             text: "感谢您使用本开源UI库。为了保障您的权益和合理使用，请在使用前仔细阅读以下协议内容：\n\n许可授权\n本UI库采用[MIT]许可证开源，您可以自由使用、复制、修改和分发本库代码，但须保留原作者署名和版权声明。\n\n使用范围\n本库适用于个人或商业项目，您可根据项目需求自由集成和定制，但不得以任何形式声称本库为您原创。\n\n免责声明\n本库按现状提供，不保证完全无误或适合特定用途。作者对因使用本库导致的任何直接或间接损失不承担责任。\n\n贡献与反馈\n欢迎社区贡献代码、报告问题或提出建议，贡献内容默认同意采用本库许可证。\n\n协议修改\n本协议内容可根据项目发展适时更新，建议定期关注最新版本。"
             Layout.topMargin: 15
-            Layout.bottomMargin: 15
+            Layout.bottomMargin: 30
             Layout.rightMargin: 30
             Layout.leftMargin: 30
         }
     }
-
 
     Rectangle {
         width: parent.width

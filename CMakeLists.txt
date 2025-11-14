@@ -61,18 +61,20 @@ qt_add_qml_module(appEvolveUI
         components/EYearProgress.qml
         components/ENextHolidayCountdown.qml
         components/EClockCard.qml
+        components/EColorPicker.qml
         components/EHitokotoCard.qml
         components/EBatteryCard.qml
         components/ESimpleDatePicker.qml
         components/EAlertDialog.qml
         components/ELoader.qml
-        components/EPlaylist.qml
         pages/BaseComponents.qml
         pages/NoBackgroundComponents.qml
         pages/OtherComponents.qml
-        QML_FILES
-        QML_FILES components/EAreaChart.qml
+        components/EAreaChart.qml
+        components/EPlaylist.qml
+
 )
+
 
 # ==========================
 # Qt 资源文件

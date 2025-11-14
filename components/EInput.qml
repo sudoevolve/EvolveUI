@@ -42,7 +42,10 @@ Item {
         id: background
         anchors.fill: parent
         radius: root.radius
-        border.color: theme.getBorderColor(textField.activeFocus)
+        // 无背景时：选中用主题高亮色，未选中用次级色；有背景时沿用主题边框色
+        border.color: root.backgroundVisible 
+                       ? theme.getBorderColor(textField.activeFocus)
+                       : (textField.activeFocus ? theme.focusColor : theme.textColor)
         border.width: 1
         color: root.backgroundVisible ? theme.secondaryColor : "transparent"
         opacity: root.enabled ? 1.0 : 0.6

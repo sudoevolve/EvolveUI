@@ -19,9 +19,11 @@ Item {
 
     // 抽屉状态
     property bool opened: false
+    // 面板宽度（抽屉本体宽度），用于与根宽度（覆盖层）分离
+    property int panelWidth: 300
 
-    // 默认尺寸
-    width: 200
+    // 根尺寸：仅为抽屉面板尺寸
+    width: root.panelWidth
     height: parent ? parent.height : 600
 
     // === 插槽：用户内容 ===
@@ -35,11 +37,14 @@ Item {
     // === 抽屉 ===
     Item {
         id: drawerContent
-        width: root.width
+        z: 2
+        width: root.panelWidth
         height: root.height
         y: 0
         // 初始位置直接设为关闭态
         x: parent.width
+
+        WheelHandler { onWheel: wheel.accepted = true }
 
         // === 阴影 ===
         MultiEffect {
@@ -62,7 +67,7 @@ Item {
             color: root.drawerColor
         }
 
-        // === 背景拦截层：防止点击穿透到底层 ===
+        // 抽屉内部拦截层，防止点击穿透
         MouseArea {
             anchors.fill: parent
             enabled: root.opened
@@ -108,4 +113,6 @@ Item {
             }
         ]
     }
+
+    // 无全屏拦截层；仅抽屉面板内部拦截事件，避免穿透
 }
