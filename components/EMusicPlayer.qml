@@ -40,6 +40,9 @@ Rectangle {
             if (found >= 0) { playAt(found); return }
         }
         mediaPlayer.stop()
+        if (root.source === src) {
+            root.source = ""
+        }
         root.source = src
         mediaPlayer.play()
     }
@@ -497,7 +500,7 @@ Rectangle {
                 anchors.fill: parent
                 fillMode: Image.PreserveAspectCrop
                 cache: false
-                asynchronous: true
+                asynchronous: false
                 sourceSize: Qt.size(Math.round(width * 0.6), Math.round(height * 0.6))
                 visible: false
                 antialiasing: true
@@ -1105,11 +1108,13 @@ Rectangle {
                 return
             }
             
-            // 切换前停止播放并清理封面，释放旧纹理
+            // 切换前停止播放
             mediaPlayer.stop()
-            root.coverImage = ""
 
             // 设置新音源并开始播放
+            if (root.source === newSource) {
+                root.source = ""
+            }
             root.source = newSource
             mediaPlayer.play()
         }
