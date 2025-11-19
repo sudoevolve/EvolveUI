@@ -7,6 +7,7 @@ Item {
     width: parent.width
     height: parent.height
     visible: true
+    property bool windowOpen: false
 
     // 数据模型
     property var aboutItems: [
@@ -144,7 +145,7 @@ Item {
                         id: blinkTimer
                         interval: 500
                         repeat: true
-                        running: root.currentText.length > 0
+                        running: root.windowOpen && root.currentText.length > 0
 
                         onTriggered: {
                             cursor.visible = !cursor.visible
@@ -154,10 +155,7 @@ Item {
             }
         }
 
-        // 启动打字机
-        Component.onCompleted: {
-            typewriterTimer.start()
-        }
+        
 
         // 按钮行
         RowLayout {
@@ -172,9 +170,45 @@ Item {
                 iconColor: "#E3B341"
                 text: "关于我"
                 onClicked: {
-                        Qt.openUrlExternally("https://github.com/sudoevolve")  // 替换为你想跳转的网址
+                        Qt.openUrlExternally("https://github.com/sudoevolve")
                     }
             }
+
+            EButton {
+                iconCharacter: "\uf0ac"
+                iconFontFamily: iconFont.name
+                iconRotateOnClick: true
+                iconColor: theme ? theme.focusColor : "#00C4B3"
+                text: "我的网站"
+                onClicked: {
+                    Qt.openUrlExternally("https://sudoevolve.github.io")
+                }
+            }
+        }
+    }
+
+    // 仅在窗口打开时运行打字机
+    Component.onCompleted: {
+        if (root.windowOpen) {
+            root.isTyping = true
+            root.charIndex = 0
+            root.currentText = ""
+            typewriterTimer.interval = 80
+            typewriterTimer.start()
+        }
+    }
+
+    onWindowOpenChanged: {
+        if (root.windowOpen) {
+            root.isTyping = true
+            root.charIndex = 0
+            root.currentText = ""
+            typewriterTimer.interval = 80
+            typewriterTimer.start()
+        } else {
+            typewriterTimer.stop()
+            delayTimer.stop()
+            blinkTimer.running = false
         }
     }
 }

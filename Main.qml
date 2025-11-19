@@ -292,7 +292,10 @@ ApplicationWindow {
          text: theme.isDark ? "切换为日间模式" : "切换为夜间模式"
          iconCharacter: theme.isDark ? "\uf186" : "\uf185"
          iconRotateOnClick: true
-         onClicked: theme.toggleTheme()
+         onClicked: {
+             theme.toggleTheme()
+             toast.show(theme.isDark ? "已切换为夜间模式" : "已切换为日间模式")
+         }
      }
 
     Components.EBlurCard {
@@ -310,6 +313,14 @@ ApplicationWindow {
     }
 
     //右侧内容
+
+    Components.EToast {
+        id: toast
+        theme: theme
+        anchors.top: contentWrapper.top
+        anchors.horizontalCenter: contentWrapper.horizontalCenter
+        anchors.topMargin: 32 + toast.yOffset
+    }
 
     Flickable {
             id: flickable
@@ -329,9 +340,10 @@ ApplicationWindow {
             anchors.left: parent.left
             anchors.top: parent.top
             anchors.leftMargin: 30
-            anchors.topMargin: 580
+            anchors.topMargin: 580 + switchAnimOffset
             property int currentIndex: 0
             property var currentItem: currentIndex === 0 ? baseLoader.item : currentIndex === 1 ? noBgLoader.item : currentIndex === 2 ? otherLoader.item : null
+            property real switchAnimOffset: 0
             
             // 跟踪哪些页面已经被加载过
             property bool noBgLoaded: false
@@ -346,6 +358,17 @@ ApplicationWindow {
                     otherLoader.active = true
                     otherLoaded = true
                 }
+                pageEnterAnim.restart()
+            }
+
+            PropertyAnimation {
+                id: pageEnterAnim
+                target: pages
+                property: "switchAnimOffset"
+                from: 30
+                to: 0
+                duration: 360
+                easing.type: Easing.OutCubic
             }
 
             Loader {
@@ -353,9 +376,12 @@ ApplicationWindow {
                 source: "pages/BaseComponents.qml"
                 active: true  // 始终保持加载状态
                 visible: pages.currentIndex === 0
+                opacity: pages.currentIndex === 0 ? 1 : 0
+                Behavior on opacity { NumberAnimation { duration: 360; easing.type: Easing.InOutQuad } }
                 onLoaded: {
                     if (item && !item.theme) item.theme = theme
                     if (item && item.viewportWidth !== undefined) item.viewportWidth = flickable.width - 60
+                    if (item && item.toastRef === undefined) item.toastRef = toast
                 }
             }
             Loader {
@@ -363,9 +389,12 @@ ApplicationWindow {
                 source: "pages/NoBackgroundComponents.qml"
                 active: false  // 初始不加载，首次切换时才加载
                 visible: pages.currentIndex === 1
+                opacity: pages.currentIndex === 1 ? 1 : 0
+                Behavior on opacity { NumberAnimation { duration: 240; easing.type: Easing.InOutQuad } }
                 onLoaded: {
                     if (item && !item.theme) item.theme = theme
                     if (item && item.viewportWidth !== undefined) item.viewportWidth = flickable.width - 60
+                    if (item && item.toastRef === undefined) item.toastRef = toast
                 }
             }
         Loader {
@@ -373,6 +402,8 @@ ApplicationWindow {
             source: "pages/OtherComponents.qml"
             active: true  // 提前加载以提供音乐播放器与播放列表给抽屉
             visible: pages.currentIndex === 2
+            opacity: pages.currentIndex === 2 ? 1 : 0
+            Behavior on opacity { NumberAnimation { duration: 240; easing.type: Easing.InOutQuad } }
             onLoaded: {
                 if (item && !item.theme) item.theme = theme
                 if (item && item.viewportWidth !== undefined) item.viewportWidth = flickable.width - 60
@@ -408,6 +439,7 @@ ApplicationWindow {
                 if (otherLoader.item && otherLoader.item.viewportWidth !== undefined) otherLoader.item.viewportWidth = flickable.width - 60
             }
         }
+
     }
 
     Components.EDrawer {
@@ -431,7 +463,9 @@ ApplicationWindow {
 
     Components.EAnimatedWindow {
         id: animationWrapper1
-        Components.Aboutme {}
+        Components.Aboutme {
+            windowOpen: animationWrapper1.state === "fullscreenState"
+        }
         // 用头像作为源，启动后自动打开，确保关闭回到头像位置
         Timer {
             interval: 30

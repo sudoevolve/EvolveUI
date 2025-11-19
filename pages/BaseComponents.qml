@@ -4,6 +4,7 @@ import "../components" as Components
 
 Flow {
     property var theme
+    property var toastRef
     // 可视区域宽度（由 Main.qml 传入并保持同步）
     property int viewportWidth: 0
     spacing: 16
@@ -42,7 +43,10 @@ Flow {
         text: theme.isDark ? "切换为日间模式" : "切换为夜间模式"
         iconCharacter: theme.isDark ? "\uf186" : "\uf185"
         iconRotateOnClick: true //图标旋转
-        onClicked: theme.toggleTheme()
+        onClicked: {
+            theme.toggleTheme()
+            if (toastRef) toastRef.show(theme.isDark ? "已切换为夜间模式" : "已切换为日间模式")
+        }
     }
 
     Components.EButton {
@@ -52,6 +56,12 @@ Flow {
         onClicked: {
             animationWrapper2.open(home)
         }
+    }
+
+    Components.EButton {
+        text: "弹出 Toast"
+        iconCharacter: "\uf0f3"
+        onClicked: if (toastRef) toastRef.show("小手拍拍")
     }
 
     Components.EButton {

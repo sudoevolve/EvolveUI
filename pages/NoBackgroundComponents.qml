@@ -4,6 +4,7 @@ import "../components" as Components
 
 Flow {
     property var theme
+    property var toastRef
     // 可视区域宽度（由 Main.qml 传入并保持同步）
     property int viewportWidth: 0
     spacing: 16
@@ -51,6 +52,13 @@ Flow {
         iconCharacter: "\uf015" // 设置图标字符，这里使用 FontAwesome 中的"主页"图标 Unicode 编码
         text: "主页"
         backgroundVisible: false
+    }
+
+    Components.EButton {
+        text: "弹出 Toast"
+        iconCharacter: "\uf0f3"
+        backgroundVisible: false
+        onClicked: if (toastRef) toastRef.show("大家的笑容闪闪发亮!")
     }
 
     Components.EButton {

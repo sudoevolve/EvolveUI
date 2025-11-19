@@ -241,6 +241,7 @@ import MusicLibrary 1.0
     Rectangle {
         anchors.fill: parent
         color: theme ? theme.secondaryColor : "#222"
+        radius: 20
     }
 
     // 原始专辑封面图像源（隐藏，仅用于 MultiEffect 模糊）
@@ -389,6 +390,26 @@ import MusicLibrary 1.0
         height: width
         z: 4
         visible: circleCoverImage !== ""
+        transformOrigin: Item.Center
+        property real breatheScale: 1.0
+        scale: breatheScale
+
+        ParallelAnimation {
+            id: coverBreathe
+            running: coverArea.containsMouse
+            loops: Animation.Infinite
+            SequentialAnimation {
+                NumberAnimation { target: rotatingCoverContainer; property: "breatheScale"; from: 1.0; to: 1.03; duration: 1600; easing.type: Easing.InOutSine }
+                NumberAnimation { target: rotatingCoverContainer; property: "breatheScale"; from: 1.03; to: 1.0; duration: 1600; easing.type: Easing.InOutSine }
+            }
+            SequentialAnimation {
+                NumberAnimation { target: rotatingCoverContainer; property: "rotation"; from: -1.2; to: 1.2; duration: 2000; easing.type: Easing.InOutSine }
+                NumberAnimation { target: rotatingCoverContainer; property: "rotation"; from: 1.2; to: -1.2; duration: 2000; easing.type: Easing.InOutSine }
+            }
+        }
+
+        Behavior on breatheScale { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
+        Behavior on rotation { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
 
         Image {
             id: rotatingCoverSource
@@ -420,7 +441,7 @@ import MusicLibrary 1.0
             layer.enabled: true
             Rectangle {
                 anchors.fill: parent
-                radius: width / 2
+                radius: 20
                 color: "black"
             }
         }
@@ -438,6 +459,18 @@ import MusicLibrary 1.0
             z: 1
         }
 
+        MultiEffect {
+            anchors.fill: rotatingCoverMasked
+            source: rotatingCoverMasked
+            visible: circleCoverImage !== ""
+            shadowEnabled: true
+            shadowColor: theme.shadowColor
+            shadowBlur: theme.shadowBlur
+            shadowHorizontalOffset: theme.shadowXOffset
+            shadowVerticalOffset: theme.shadowYOffset
+        }
+
+
         // 点击封面：播放/暂停
         MouseArea {
             id: coverArea
@@ -447,6 +480,10 @@ import MusicLibrary 1.0
             onPressed: {
                 // 触发不移动的边框发光反馈
                 coverGlowAnim.restart()
+            }
+            onExited: {
+                rotatingCoverContainer.breatheScale = 1.0
+                rotatingCoverContainer.rotation = 0
             }
             onClicked: {
                 if (!sourceItem) return;
@@ -472,7 +509,7 @@ import MusicLibrary 1.0
             // 圆形半透明遮罩，匹配封面形状
             Rectangle {
                 anchors.fill: parent
-                radius: width / 2
+                radius: 20
                 color: Qt.rgba(0, 0, 0, 0.09)
                 antialiasing: true
                 smooth: true
@@ -482,7 +519,7 @@ import MusicLibrary 1.0
             Rectangle {
                 id: coverGlowRing
                 anchors.fill: parent
-                radius: width / 2
+                radius: 20
                 color: "transparent"
                 border.color: sourceItem ? sourceItem.coverProminentColor : (theme ? theme.focusColor : "#ffffff")
                 border.width: 2
@@ -515,24 +552,6 @@ import MusicLibrary 1.0
             }
         }
 
-        Timer {
-            id: coverSpinTimer
-            interval: 33
-            running: sourceItem && sourceItem.isPlaying
-            repeat: true
-            onTriggered: rotatingCoverMasked.rotation = (rotatingCoverMasked.rotation + 0.6) % 360
-        }
-        
-
-    }
-
-    // 轻微噪声抖动
-    ShaderEffect {
-        anchors.fill: parent
-        z: 2.1
-        property real strength: theme && theme.isDark ? 0.05 : 0.03
-        fragmentShader: "\n                    uniform lowp float qt_Opacity;\n                    uniform lowp float strength;\n                    void main() {\n                        highp float n = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);\n                        gl_FragColor = vec4(vec3(n), strength) * qt_Opacity;\n                    }\n                "
-        visible: !displayCoverIsDefault && displayCoverImage !== ""
     }
 
     // 无封面：显示音乐图标（居中）
@@ -569,7 +588,7 @@ import MusicLibrary 1.0
     Item {
         id: lyricsPanel
         anchors.left: rotatingCoverContainer.right
-        anchors.leftMargin: 150
+        anchors.leftMargin: 100
         anchors.right: parent.right
         anchors.rightMargin: 40
         anchors.verticalCenter: parent.verticalCenter
@@ -614,7 +633,6 @@ import MusicLibrary 1.0
                 boundsBehavior: Flickable.StopAtBounds
                 model: lyricsAvailable ? lyricsEntries : [ { text: "未找到歌词" } ]
                 currentIndex: currentLyricIndex
-                cacheBuffer: height
                 reuseItems: true
                 // 高亮移动与范围：将当前行保持在视图偏上的位置
                 highlightMoveDuration: 380
@@ -665,6 +683,7 @@ import MusicLibrary 1.0
                         Text {
                             id: baseText
                             anchors.verticalCenter: parent.verticalCenter
+                            anchors.left: parent.left
                             width: parent.width
                             text: modelData.text
                             wrapMode: Text.NoWrap
@@ -672,6 +691,7 @@ import MusicLibrary 1.0
                             font.pixelSize: 20
                             font.bold: isActive
                             color: theme ? theme.textColor : "#ffffff"
+                            renderType: Text.QtRendering
                             opacity: isActive ? 1.0 : 0.6
                         }
 
@@ -679,25 +699,28 @@ import MusicLibrary 1.0
                         Item {
                             id: fillMask
                             anchors.verticalCenter: parent.verticalCenter
+                            anchors.left: parent.left
                             // 根据歌词进度动态填充：本行开始到下一行开始的区间
                             readonly property real lineStart: (index >= 0 && index < lyricsEntries.length) ? lyricsEntries[index].t : 0
                             readonly property real lineEnd: (index + 1 < lyricsEntries.length) ? lyricsEntries[index + 1].t : (sourceItem ? sourceItem.duration : lineStart + 3000)
                             readonly property real posMs: (sourceItem && sourceItem.positionMs) ? sourceItem.positionMs : 0
                             readonly property real ratio: isActive ? Math.max(0, Math.min(1, (posMs - lineStart) / Math.max(1, lineEnd - lineStart))) : 0
-                            width: baseText.paintedWidth * ratio
+                            width: Math.ceil(fillText.paintedWidth * ratio)
                             height: parent.height
                             clip: true
 
                             Text {
                                 id: fillText
                                 anchors.verticalCenter: parent.verticalCenter
+                                anchors.left: parent.left
                                 width: parent.width
                                 text: modelData.text
                                 wrapMode: Text.NoWrap
                                 horizontalAlignment: Text.AlignLeft
-                                font.pixelSize: 20
+                                font.pixelSize: baseText.font.pixelSize
                                 font.bold: isActive
                                 color: theme ? theme.focusColor : "#00C4B3"
+                                renderType: Text.QtRendering
                             }
                         }
                     }
@@ -952,16 +975,112 @@ import MusicLibrary 1.0
                 }
             }
 
-            // 时间显示（右侧）
+            // 时间显示
             Text {
                 id: timeText
-                anchors.right: parent.right
+                anchors.right: volumeIcon.left
+                anchors.rightMargin: 24
                 anchors.verticalCenter: parent.verticalCenter
                 text: sourceItem ? (formatTime(sourceItem.position) + " / " + formatTime(sourceItem.duration)) : "--:-- / --:--"
                 font.pixelSize: 14
                 color: theme ? Qt.darker(theme.textColor, 1.15) : "#dddddd"
                 opacity: 0.9
                 horizontalAlignment: Text.AlignRight
+            }
+
+            Text {
+                id: volumeIcon
+                anchors.right: volumeTrack.left
+                anchors.rightMargin: 8
+                anchors.verticalCenter: parent.verticalCenter
+                text: theme && theme.musicVolume === 0 ? "\uf026" : "\uf028"
+                font.family: iconFont.name
+                font.pixelSize: 18
+                color: muteArea.pressed ? (theme ? theme.focusColor : "#00C4B3") : (theme ? theme.textColor : "#ffffff")
+                width: 24
+                height: 24
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                MouseArea {
+                    id: muteArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        if (!theme) return
+                        if (theme.musicVolume > 0) {
+                            theme.musicVolume = 0
+                        } else {
+                            var restore = volumeTrack.ratio > 0 ? volumeTrack.ratio : 0.2
+                            theme.musicVolume = restore
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                id: volumeTrack
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                width: 140
+                height: 8
+                radius: 4
+                color: theme ? Qt.rgba(theme.textColor.r, theme.textColor.g, theme.textColor.b, 0.25) : Qt.rgba(255,255,255,0.25)
+                antialiasing: true
+                smooth: true
+                property bool dragging: false
+                readonly property real ratio: theme ? Math.max(0, Math.min(1, theme.musicVolume)) : 0
+
+                Rectangle {
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width * volumeTrack.ratio
+                    height: parent.height
+                    radius: parent.radius
+                    color: theme ? theme.focusColor : "#00C4B3"
+                    antialiasing: true
+                    smooth: true
+                }
+
+                Rectangle {
+                    width: 12
+                    height: 12
+                    radius: 6
+                    color: theme ? theme.focusColor : "#00C4B3"
+                    border.color: theme ? Qt.lighter(theme.focusColor, 1.4) : Qt.rgba(0, 196, 179, 1)
+                    border.width: 1
+                    antialiasing: true
+                    smooth: true
+                    z: 2
+                    anchors.verticalCenter: volumeTrack.verticalCenter
+                    x: Math.max(0, Math.min(volumeTrack.width, volumeTrack.width * volumeTrack.ratio)) - width / 2
+                    opacity: (volumeArea.containsMouse || volumeTrack.dragging) ? 1.0 : 0.0
+                    scale: (volumeArea.containsMouse || volumeTrack.dragging) ? 1.15 : 1.0
+                    transformOrigin: Item.Center
+                    Behavior on scale { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
+                }
+
+                MouseArea {
+                    id: volumeArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    function setVolumeAt(px) {
+                        var r = Math.max(0, Math.min(1, px / volumeTrack.width))
+                        if (theme) theme.musicVolume = r
+                    }
+                    onPressed: function(mouse) {
+                        volumeTrack.dragging = true
+                        setVolumeAt(mouse.x)
+                    }
+                    onPositionChanged: function(mouse) {
+                        if (pressed) setVolumeAt(mouse.x)
+                    }
+                    onReleased: function(mouse) {
+                        setVolumeAt(mouse.x)
+                        volumeTrack.dragging = false
+                    }
+                }
             }
         }
     }

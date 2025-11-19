@@ -1,6 +1,6 @@
 # EvolveUI - Modern QML 组件库
 
-![EvolveUI Demo](./preview/1.jpg)
+![EvolveUI Demo](./preview/1.png)
 
 EvolveUI 是一个现代化、高度风格统一的 Qt6 QML 前端组件库，致力于为跨平台应用程序提供一致、优雅、响应式的 UI 体验。灵感来源于 Telegram 动效、Material Design 规范，并充分考虑了桌面与移动端的交互习惯。
 
@@ -64,11 +64,12 @@ EvolveUI 是一个现代化、高度风格统一的 Qt6 QML 前端组件库，�
 | `ERadioButton.qml`     | 动画单选组件                            |
 | `ESimpleDatePicker.qml`| 简易日期选择组件                        |
 | `ESlider.qml`          | 支持滑块动画的调节组件                  |
+| `EToast.qml`          | 支持消息提示的组件                      |
 | `ESwitchButton.qml`    | 动画开关组件                            |
 | `ETheme.qml`           | 全局样式与颜色定义                      |
 | `ETimeDisplay.qml`     | 时间显示组件                            |
 | `EYearProgress.qml`    | 年度进度展示组件                        |
-| `EAlertDialog.qml`     | 弹窗组件（遮罩、模糊、确认/取消）       |
+| `EAlertDialog.qml`     | 弹窗组件                                |
 
 
 ## ♻️ 如何复用组件

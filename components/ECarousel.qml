@@ -88,7 +88,6 @@ Item {
                             anchors.centerIn: parent
                             size: Math.min(parent.width, parent.height) * 0.15
                             speed: 0.8
-                            color: theme ? theme.focusColor : "#5D3FD3"
                             visible: sourceItem.status !== Image.Ready
                             running: visible
                             z: 2
@@ -117,7 +116,6 @@ Item {
                 anchors.centerIn: parent
                 size: Math.min(parent.width, parent.height) * 0.15
                 speed: 0.8
-                color: theme ? theme.focusColor : "#5D3FD3"
                 visible: root.model.length === 0
                 running: visible
                 z: 3

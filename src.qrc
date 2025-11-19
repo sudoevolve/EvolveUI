@@ -5,5 +5,6 @@
         <file>fonts/pic/avatar.png</file>
         <file>fonts/pic/01.jpg</file>
         <file>fonts/pic/02.jpg</file>
+        <file>fonts/loader.gif</file>
     </qresource>
 </RCC>
