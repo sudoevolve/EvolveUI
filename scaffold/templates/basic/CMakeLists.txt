@@ -5,13 +5,16 @@ qt_standard_project_setup(REQUIRES 6.8)
 qt_add_executable(__PROJECT_NAME__
     main.cpp
 )
-file(GLOB QML_COMPONENTS CONFIGURE_DEPENDS "components/*.qml")
+file(GLOB QML_COMPONENTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS "components/*.qml")
 qt_add_qml_module(__PROJECT_NAME__
     URI EvolveUI
     VERSION 1.0
     QML_FILES
-        Main.qml
-        ${QML_COMPONENTS}
+                Main.qml
+                HomePage.qml
+                FavoritesPage.qml
+                SettingsPage.qml
+                ${QML_COMPONENTS}
 )
 qt_add_resources(APP_RESOURCES
     src.qrc
