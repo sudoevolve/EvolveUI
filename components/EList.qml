@@ -23,6 +23,7 @@ Item {
     property int itemIconSize: 20
     property int listPadding: 12
     property real pressedScale: 0.96
+    property bool textShown: true
     property color buttonColor: theme.secondaryColor
     property color hoverColor: Qt.darker(buttonColor, 1.2)
     property color textColor: theme.textColor
@@ -109,14 +110,24 @@ Item {
                     horizontalAlignment: Text.AlignHCenter
                 }
 
-                // 显示文本
-                Text {
-                    text: model.display
-                    color: root.textColor
-                    font.pixelSize: root.itemFontSize
-                    elide: Text.ElideRight
-                    Layout.fillWidth: true
-                    verticalAlignment: Text.AlignVCenter
+                Item {
+                    id: labelWrap
+                    width: root.textShown ? label.implicitWidth : 0
+                    height: label.implicitHeight
+                    Layout.preferredWidth: width
+                    Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                    clip: true
+
+                    Text {
+                        id: label
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: model.display
+                        opacity: root.textShown ? 1 : 0
+                        color: root.textColor
+                        font.pixelSize: root.itemFontSize
+                        elide: Text.ElideRight
+                        Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                    }
                 }
             }
 

@@ -48,40 +48,27 @@ ApplicationWindow {
                 onHoveredChanged: sidebar.expanded = hovered
             }
 
+            ListModel {
+                id: navModel
+                ListElement { display: "首页"; iconChar: "\uf015" }
+                ListElement { display: "收藏"; iconChar: "\uf005" }
+                ListElement { display: "设置"; iconChar: "\uf013" }
+            }
+
             ColumnLayout {
                 anchors.fill: parent
                 spacing: 10
 
-                EButton {
-                    text: "首页"
-                    textShown: sidebar.expanded
-                    iconCharacter: "\uf015"
+                EList {
                     backgroundVisible: false
-                    Layout.fillWidth: true
-                    onClicked: contentStack.currentIndex = 0
-                }
-
-                EButton {
-                    text: "收藏"
+                    model: navModel
                     textShown: sidebar.expanded
-                    iconCharacter: "\uf005"
-                    backgroundVisible: false
                     Layout.fillWidth: true
-                    onClicked: contentStack.currentIndex = 1
-                }
-
-                EButton {
-                    text: "设置"
-                    textShown: sidebar.expanded
-                    iconCharacter: "\uf013"
-                    backgroundVisible: false
-                    Layout.fillWidth: true
-                    onClicked: contentStack.currentIndex = 2
-                }
-
-                Item {
                     Layout.fillHeight: true
+                    onItemClicked: function(index, data) { contentStack.currentIndex = index }
                 }
+
+                Item { Layout.fillHeight: true }
 
                 EButton {
                     text: theme.isDark ? "浅色" : "深色"
