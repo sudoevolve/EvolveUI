@@ -8,10 +8,11 @@ Page {
     }
 
     Label {
-        text: "Home Page"
+        text: "Settings Page"
         anchors.centerIn: parent
         font.pixelSize: 24
         color: theme.textColor
     }
 
+    
 }

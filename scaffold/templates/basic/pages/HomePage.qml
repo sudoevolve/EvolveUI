@@ -8,7 +8,7 @@ Page {
     }
 
     Label {
-        text: "Favorites Page"
+        text: "Home Page"
         anchors.centerIn: parent
         font.pixelSize: 24
         color: theme.textColor

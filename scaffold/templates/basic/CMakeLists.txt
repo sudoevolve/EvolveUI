@@ -11,9 +11,9 @@ qt_add_qml_module(__PROJECT_NAME__
     VERSION 1.0
     QML_FILES
                 Main.qml
-                HomePage.qml
-                FavoritesPage.qml
-                SettingsPage.qml
+                pages/HomePage.qml
+                pages/FavoritesPage.qml
+                pages/SettingsPage.qml
                 ${QML_COMPONENTS}
 )
 qt_add_resources(APP_RESOURCES
@@ -22,4 +22,3 @@ qt_add_resources(APP_RESOURCES
 target_sources(__PROJECT_NAME__ PRIVATE ${APP_RESOURCES})
 target_link_libraries(__PROJECT_NAME__ PRIVATE Qt6::Quick Qt6::Multimedia Qt6::Network)
 set_target_properties(__PROJECT_NAME__ PROPERTIES WIN32_EXECUTABLE TRUE)
-

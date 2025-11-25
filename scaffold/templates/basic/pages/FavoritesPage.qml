@@ -8,11 +8,10 @@ Page {
     }
 
     Label {
-        text: "Settings Page"
+        text: "Favorites Page"
         anchors.centerIn: parent
         font.pixelSize: 24
         color: theme.textColor
     }
 
-    
 }
