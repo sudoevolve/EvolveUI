@@ -21,7 +21,7 @@ ApplicationWindow {
     SplitView {
         anchors.fill: parent
         handle: Rectangle {
-            implicitWidth: 8
+            implicitWidth: 0
             color: "transparent"
         }
 
