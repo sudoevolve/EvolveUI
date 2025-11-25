@@ -37,7 +37,7 @@ ApplicationWindow {
             implicitWidth: expanded ? expandedWidth : collapsedWidth
             clip: true
             SplitView.minimumWidth: collapsedWidth
-            SplitView.maximumWidth: 300
+            SplitView.maximumWidth: expandedWidth
             SplitView.preferredWidth: implicitWidth
 
             Behavior on implicitWidth {
