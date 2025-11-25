@@ -23,6 +23,7 @@ Rectangle {
     property real pressedScale: 0.96                 // 按下缩放比例
     property color shadowColor: theme.shadowColor    // 阴影颜色
     property bool iconRotateOnClick: false           //图标是否旋转
+    property bool textShown: root.text !== ""
 
     // ==== 尺寸计算 ====
     readonly property real contentScale: 0.4
@@ -70,7 +71,8 @@ Rectangle {
     RowLayout {
         id: layout
         anchors.centerIn: parent
-        spacing: 8
+        spacing: root.textShown ? 8 : 0
+        Behavior on spacing { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
 
         // 图标 —— 包裹在 Transform 中以便旋转
         Text {
@@ -115,17 +117,27 @@ Rectangle {
         }
 
         // 文字
-        Text {
-            id: label
-            text: root.text
-            visible: root.text !== ""
-            color: root.textColor
-            font.pixelSize: root.fontSize
-            font.bold: true
-            verticalAlignment: Text.AlignVCenter
-            Layout.preferredWidth: label.implicitWidth
+        Item {
+            id: labelWrap
+            width: root.textShown ? label.implicitWidth : 0
+            height: label.implicitHeight
+            Layout.preferredWidth: width
+            Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+            clip: true
+
+            Text {
+                id: label
+                anchors.verticalCenter: parent.verticalCenter
+                text: root.text
+                opacity: root.textShown ? 1 : 0
+                color: root.textColor
+                font.pixelSize: root.fontSize
+                font.bold: true
+                verticalAlignment: Text.AlignVCenter
+                Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+            }
         }
-    }
+}
 
     // ==== 交互与动画 ====
     MouseArea {
