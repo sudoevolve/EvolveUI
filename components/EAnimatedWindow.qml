@@ -52,7 +52,7 @@ Item {
         width: 100,
         height: 100,
         radius: 55,
-        color: buttonColor,
+        color: theme.secondaryColor,
         rotationX: 0,
         rotationY: 0,
         sourceItem: null
@@ -64,7 +64,6 @@ Item {
 
         isAnimating = true;
         startState.sourceItem = source;
-        if (startState.sourceItem) startState.sourceItem.opacity = 0;
 
         // 1. 获取源控件的中心点坐标映射到 animationWrapper
         var map = startState.sourceItem.mapToItem(
@@ -83,19 +82,25 @@ Item {
         startState.radius = startState.sourceItem.radius !== undefined ? startState.sourceItem.radius : 30;
 
         // 颜色穿透逻辑
+        function isVisibleColor(c) {
+            if (!c) return false;
+            if (c === "transparent" || c === Qt.transparent) return false;
+            if (c.a !== undefined && c.a <= 0.01) return false;
+            return true;
+        }
         function findNonTransparentColor(item) {
             if (!item || !item.visible || item.opacity <= 0.01) return null;
 
-            if (item.color && item.color !== "transparent" && item.color !== Qt.transparent) {
+            if (isVisibleColor(item.fill)) {
+                return item.fill;
+            }
+
+            if (isVisibleColor(item.color)) {
                 return item.color;
             }
 
-            if (item.textColor && item.textColor !== "transparent" && item.textColor !== Qt.transparent) {
+            if (isVisibleColor(item.textColor)) {
                 return item.textColor;
-            }
-
-            if (item.fill && item.fill !== "transparent" && item.fill !== Qt.transparent) {
-                return item.fill;
             }
 
             for (var i = 0; i < item.children.length; ++i) {
@@ -110,8 +115,8 @@ Item {
         }
 
         startState.color = findNonTransparentColor(startState.sourceItem);
-        if (!startState.color || startState.color === "transparent" || startState.color === Qt.transparent) {
-            startState.color = buttonColor;
+        if (!isVisibleColor(startState.color)) {
+            startState.color = theme.secondaryColor;
         }
 
         // 4. 根据源控件位置计算初始3D倾斜角度
@@ -136,6 +141,7 @@ Item {
         appContainer.color = startState.color;
         rotationX.angle = startState.rotationX;
         rotationY.angle = startState.rotationY;
+        if (startState.sourceItem) startState.sourceItem.opacity = 0;
 
         // 6. 启动动画
         visible = true;
@@ -244,6 +250,7 @@ Item {
                         PropertyAnimation { target: appContainer; property:"height"; to: startState.height + (animationWrapper.height - startState.height) * segment1Progress; duration: animDuration * segment1DurationFactor; easing.type: Easing.InQuad }
                         PropertyAnimation { target: appContainer; property:"x"; to: startState.x * (1 - segment1Progress); duration: animDuration * segment1DurationFactor; easing.type: Easing.InQuad }
                         PropertyAnimation { target: appContainer; property:"y"; to: startState.y * (1 - segment1Progress); duration: animDuration * segment1DurationFactor; easing.type: Easing.InQuad }
+                        ColorAnimation { target: appContainer; property:"color"; to: fullscreenColor; duration: animDuration * segment1DurationFactor }
                     }
                     ParallelAnimation {
                         PropertyAnimation { target: rotationX; property:"angle"; to: 0; duration: animDuration * segment2DurationFactor; easing.type: Easing.OutQuad }
@@ -255,7 +262,6 @@ Item {
                         PropertyAnimation { target: appContainer; property:"y"; to: 0; duration: animDuration * segment2DurationFactor; easing.type: Easing.OutQuad }
                     }
                 }
-                ColorAnimation { target: appContainer; property:"color"; to: fullscreenColor; duration: animDuration }
                 NumberAnimation { target: windowContent; property:"opacity"; to: 1; duration: animDuration * 0.24; easing.type: Easing.OutQuart }
             }
         },

@@ -5,7 +5,7 @@ import EvolveUI
 
 ApplicationWindow {
     width: 960
-    height: 549
+    height: 540
     visible: true
     title: "demo"
 
@@ -69,16 +69,6 @@ ApplicationWindow {
                 }
 
                 Item { Layout.fillHeight: true }
-
-                EButton {
-                    text: theme.isDark ? "浅色" : "深色"
-                    textShown: sidebar.expanded
-                    iconCharacter: theme.isDark ? "\uf185" : "\uf186"
-                    backgroundVisible: false
-                    iconRotateOnClick: true
-                    Layout.fillWidth: true
-                    onClicked: theme.toggleTheme()
-                }
             }
         }
 
@@ -95,7 +85,7 @@ ApplicationWindow {
                 y: visible ? 0 : 12
                 Behavior on opacity { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
                 Behavior on y { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
-                HomePage { anchors.fill: parent }
+                HomePage { id: homePage; anchors.fill: parent }
             }
 
             Item {
@@ -115,7 +105,7 @@ ApplicationWindow {
                 y: visible ? 0 : 12
                 Behavior on opacity { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
                 Behavior on y { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
-                SettingsPage { anchors.fill: parent }
+                SettingsPage { anchors.fill: parent; animWindowRef: homePage.animatedWindow }
             }
         }
     }

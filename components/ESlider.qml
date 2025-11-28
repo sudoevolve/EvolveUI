@@ -187,7 +187,7 @@ Rectangle {
                     Behavior on yScale { SpringAnimation { spring: 2.5; damping: 0.25 } }
                 }
 
-                Behavior on x { SmoothedAnimation { duration: 100 } }
+                Behavior on x { enabled: root.isPressed; SmoothedAnimation { duration: 100 } }
 
                 // === 交互 ===
                 MouseArea {

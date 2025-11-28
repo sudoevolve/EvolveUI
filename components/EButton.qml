@@ -16,6 +16,7 @@ Rectangle {
     property bool backgroundVisible: true            // 是否显示背景
     property real radius: 20                         // 圆角半径
     property color buttonColor: theme.secondaryColor // 默认背景色
+    property color fill: buttonColor
     property color hoverColor: Qt.darker(buttonColor, 1.2) // 悬停背景色
     property color textColor: theme.textColor        // 文字颜色
     property color iconColor: theme.textColor

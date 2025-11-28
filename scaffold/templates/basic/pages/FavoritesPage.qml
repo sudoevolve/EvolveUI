@@ -1,8 +1,10 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 import EvolveUI
 
 Page {
+    padding:20
     background: Rectangle {
         color: "transparent"
     }
@@ -14,4 +16,13 @@ Page {
         color: theme.textColor
     }
 
+    Flow {
+        spacing: 16
+        anchors.fill: parent
+
+    EClock {
+
+        }
+
+    }
 }
