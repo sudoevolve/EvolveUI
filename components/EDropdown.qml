@@ -207,7 +207,7 @@ Item {
                             radius: 6
                             
                             property bool hovered: false
-                            color: hovered ? root.hoverColor : (root.backgroundVisible ? root.headerColor : Qt.rgba(root.hoverColor.r, root.hoverColor.g, root.hoverColor.b, 0))
+                            color: !root.backgroundVisible ? "transparent" : (hovered ? root.hoverColor : Qt.rgba(root.hoverColor.r, root.hoverColor.g, root.hoverColor.b, 0))
                             Behavior on color { ColorAnimation { duration: 150 } }
 
                             transform: Scale {
