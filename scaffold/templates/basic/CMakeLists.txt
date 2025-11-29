@@ -5,7 +5,7 @@ qt_standard_project_setup(REQUIRES 6.8)
 qt_add_executable(__PROJECT_NAME__
     main.cpp
 )
-file(GLOB QML_COMPONENTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS "components/*.qml")
+file(GLOB_RECURSE QML_COMPONENTS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS "components/*.qml")
 qt_add_qml_module(__PROJECT_NAME__
     URI EvolveUI
     VERSION 1.0
