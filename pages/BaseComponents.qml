@@ -174,6 +174,7 @@ Flow {
     }
 
     Components.EDropdown {
+        opened: true
         model: [
             { text: "番茄炒鸡蛋" },
             { text: "紫菜汤" },

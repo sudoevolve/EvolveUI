@@ -177,6 +177,7 @@ Flow {
     }
 
     Components.EDropdown {
+        opened: true
         backgroundVisible: false
         model: [
             { text: "番茄炒鸡蛋" },

@@ -2,6 +2,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
+import QtQuick.Controls.Basic as Basic
 import QtQuick.Effects
 
 Item {
@@ -9,7 +10,7 @@ Item {
 
     // === 基础属性 ===
     property string title: "请选择"
-    property bool opened: true
+    property bool opened: false
     property var model: []
     property int selectedIndex: -1
     signal selectionChanged(int index, var item)
@@ -23,7 +24,7 @@ Item {
     property bool shadowEnabled: true
     property int fontSize: 16
     property color hoverColor: Qt.darker(headerColor, 1.2)
-    property int headerHeight: 48
+    property int headerHeight: 54
     property int popupMaxHeight: 300
     property int horizontalPadding: 24
     property real pressedScale: 0.96
@@ -168,95 +169,109 @@ Item {
             radius: root.radius
             color: root.backgroundVisible ? root.headerColor : "transparent"
             clip: true
-            height: Math.min(contentLayout.implicitHeight, root.popupMaxHeight)
+            height: Math.min(contentListView.contentHeight + 10, root.popupMaxHeight)
 
             Behavior on height { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
 
-            ColumnLayout {
-                id: contentLayout
-                width: parent.width
+            ListView {
+                id: contentListView
+                anchors.fill: parent
+                clip: true
                 spacing: 6
+                topMargin: 4
+                bottomMargin: 4
+                model: root.model
 
-                Item { Layout.preferredHeight: 2; Layout.fillWidth: true }
+                delegate: Item {
+                    width: contentListView.width - 8
+                    height: 48
+                    anchors.horizontalCenter: parent.horizontalCenter
 
-                Repeater {
-                    model: root.model
+                    opacity: root.opened ? 1 : 0
+                    Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
 
-                    Item {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 48
-                        Layout.leftMargin: 4
-                        Layout.rightMargin: 4
+                    transform: Scale {
+                        id: itemAppearScale
+                        origin.x: width / 2
+                        origin.y: height / 2
+                        xScale: root.opened ? 1.0 : 0.98
+                        yScale: root.opened ? 1.0 : 0.98
+                        Behavior on xScale { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                        Behavior on yScale { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                    }
 
-                        opacity: root.opened ? 1 : 0
-                        Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                    Rectangle {
+                        id: itemBg
+                        anchors.fill: parent
+                        radius: 6
+
+                        property bool hovered: false
+                        color: !root.backgroundVisible ? "transparent" : (hovered ? root.hoverColor : Qt.rgba(root.hoverColor.r, root.hoverColor.g, root.hoverColor.b, 0))
+                        Behavior on color { ColorAnimation { duration: 150 } }
 
                         transform: Scale {
-                            id: itemAppearScale
+                            id: itemScale
                             origin.x: width / 2
                             origin.y: height / 2
-                            xScale: root.opened ? 1.0 : 0.98
-                            yScale: root.opened ? 1.0 : 0.98
-                            Behavior on xScale { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-                            Behavior on yScale { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
                         }
 
-                        Rectangle {
-                            id: itemBg
+                        ParallelAnimation {
+                            id: restoreItemAnimation
+                            SpringAnimation { target: itemScale; property: "xScale"; spring: 2.5; damping: 0.25 }
+                            SpringAnimation { target: itemScale; property: "yScale"; spring: 2.5; damping: 0.25 }
+                            NumberAnimation { target: itemBg; property: "opacity"; to: 1; duration: 150 }
+                        }
+
+                        MouseArea {
                             anchors.fill: parent
-                            radius: 6
-                            
-                            property bool hovered: false
-                            color: !root.backgroundVisible ? "transparent" : (hovered ? root.hoverColor : Qt.rgba(root.hoverColor.r, root.hoverColor.g, root.hoverColor.b, 0))
-                            Behavior on color { ColorAnimation { duration: 150 } }
-
-                            transform: Scale {
-                                id: itemScale
-                                origin.x: width / 2
-                                origin.y: height / 2
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onPressed: {
+                                itemScale.xScale = root.pressedScale
+                                itemScale.yScale = root.pressedScale
                             }
-
-                            ParallelAnimation {
-                                id: restoreItemAnimation
-                                SpringAnimation { target: itemScale; property: "xScale"; spring: 2.5; damping: 0.25 }
-                                SpringAnimation { target: itemScale; property: "yScale"; spring: 2.5; damping: 0.25 }
-                                NumberAnimation { target: itemBg; property: "opacity"; to: 1; duration: 150 }
+                            onReleased: restoreItemAnimation.start()
+                            onCanceled: restoreItemAnimation.start()
+                            onClicked: {
+                                root.selectedIndex = index
+                                root.opened = false
+                                root.selectionChanged(index, modelData)
                             }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onPressed: {
-                                    itemScale.xScale = root.pressedScale
-                                    itemScale.yScale = root.pressedScale
-                                }
-                                onReleased: restoreItemAnimation.start()
-                                onCanceled: restoreItemAnimation.start()
-                                onClicked: {
-                                    root.selectedIndex = index
-                                    root.opened = false
-                                    root.selectionChanged(index, modelData)
-                                }
-                                onEntered: itemBg.hovered = true
-                                onExited: itemBg.hovered = false
-                            }
+                            onEntered: itemBg.hovered = true
+                            onExited: itemBg.hovered = false
                         }
+                    }
 
-                        Text {
-                            anchors.left: parent.left
-                            anchors.leftMargin: root.horizontalPadding - 4
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: modelData.text
-                            font.pixelSize: root.fontSize
-                            font.bold: false
-                            color: root.textColor
-                            visible: true
-                        }
+                    Text {
+                        anchors.left: parent.left
+                        anchors.leftMargin: root.horizontalPadding - 4
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: modelData.text
+                        font.pixelSize: root.fontSize
+                        font.bold: false
+                        color: root.textColor
+                        visible: true
                     }
                 }
 
-                Item { Layout.preferredHeight: 2; Layout.fillWidth: true }
+                ScrollBar.vertical: Basic.ScrollBar {
+                    width: 4
+                    policy: ScrollBar.AsNeeded
+                    active: contentListView.moving || contentListView.dragging
+
+                    contentItem: Rectangle {
+                        implicitWidth: 4
+                        implicitHeight: 100
+                        radius: 2
+                        color: root.textColor
+                        opacity: 0.3
+                    }
+                    background: Rectangle {
+                        implicitWidth: 4
+                        implicitHeight: 100
+                        color: "transparent"
+                    }
+                }
             }
         }
 
