@@ -10,7 +10,7 @@ Item {
     // === 基础属性 ===
     property string title: "请选择"
     property bool opened: true
-    property var model: []          // [{ text: "选项", value: 1 }]
+    property var model: []
     property int selectedIndex: -1
     signal selectionChanged(int index, var item)
 
@@ -21,11 +21,13 @@ Item {
     property color textColor: theme.textColor
     property color shadowColor: theme.shadowColor
     property bool shadowEnabled: true
-    property int headerHeight: 52
+    property int fontSize: 16
+    property color hoverColor: Qt.darker(headerColor, 1.2)
+    property int headerHeight: 48
     property int popupMaxHeight: 300
-    property int horizontalPadding: 16
+    property int horizontalPadding: 24
     property real pressedScale: 0.96
-    property int popupSpacing: 8
+    property int popupSpacing: 6
 
     // === 弹出动画参数 ===
     property int popupEnterDuration: 260
@@ -33,17 +35,17 @@ Item {
     property real popupSlideOffset: -12
     property real popupScaleFrom: 0.98
 
+    property int popupDirection: 0 // 0: Down, 1: Up
+
     width: 200
     height: headerHeight
 
-    // 背景 + 文字分离（避免重影）
     Item {
         id: headerContainer
         anchors.left: parent.left
         anchors.right: parent.right
         height: root.headerHeight
 
-        // 阴影效果（只作用于背景）
         MultiEffect {
             source: headerBackground
             anchors.fill: headerBackground
@@ -55,7 +57,6 @@ Item {
             shadowHorizontalOffset: theme.shadowXOffset
         }
 
-        // 背景矩形（仅用于阴影，无文字）
         Rectangle {
             id: headerBackground
             anchors.fill: parent
@@ -66,11 +67,9 @@ Item {
             visible: root.backgroundVisible || root.shadowEnabled
         }
 
-        // 文字和图标（独立绘制，无阴影采样）
         Item {
             anchors.fill: parent
 
-            // 点击缩放动画
             transform: Scale {
                 id: headerScale
                 origin.x: width / 2
@@ -83,33 +82,41 @@ Item {
                 SpringAnimation { target: headerScale; property: "yScale"; spring: 2.5; damping: 0.25 }
             }
 
-            RowLayout {
+            Item {
                 anchors.fill: parent
-                anchors.margins: root.horizontalPadding
-                spacing: 0
+                anchors.leftMargin: root.horizontalPadding
+                anchors.rightMargin: root.horizontalPadding
 
                 Text {
+                    id: headerText
+                    anchors.left: parent.left
+                    anchors.right: arrowIcon.left
+                    anchors.rightMargin: 8
+                    anchors.verticalCenter: parent.verticalCenter
+
                     text: root.selectedIndex >= 0 ? root.model[root.selectedIndex].text : root.title
                     color: root.textColor
-                    font.pixelSize: 16
+                    font.pixelSize: root.fontSize
                     font.bold: true
                     elide: Text.ElideRight
                     verticalAlignment: Text.AlignVCenter
-                    Layout.fillWidth: true
                 }
 
                 Text {
+                    id: arrowIcon
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+
                     text: "\uf054"
                     font.family: "Font Awesome 6 Free"
                     font.pixelSize: 16
                     color: theme.focusColor
-                    rotation: root.opened ? -90 : 90
-                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                    rotation: root.opened ? (root.popupDirection === 1 ? -90 : 90) : 0
+
                     Behavior on rotation { RotationAnimation { duration: 250; easing.type: Easing.InOutQuad } }
                 }
             }
 
-            // 点击区域
             MouseArea {
                 anchors.fill: parent
                 hoverEnabled: true
@@ -125,27 +132,25 @@ Item {
         }
     }
 
-    // 弹出菜单
     Item {
         id: popupContainer
         width: root.width
-        // 通过偏移实现下滑动画
+        height: popupBackground.height
         property real popupOffsetY: 0
-        y: headerContainer.height + root.popupSpacing + popupOffsetY
-        // 改为按动画可见：打开或仍有不透明度时可见，避免立即隐藏打断动画
+        y: popupDirection === 1
+           ? -popupContainer.height - root.popupSpacing + popupOffsetY
+           : headerContainer.height + root.popupSpacing + popupOffsetY
+
         enabled: true
         visible: opacity > 0 || root.opened
-        // 初始为隐藏，由状态控制 0/1（配合 Transition 实现动画）
         opacity: 0
 
-        // 顶部基准的缩放（轻微回弹）
         transform: Scale {
             id: popupScale
             origin.x: width / 2
             origin.y: 0
         }
 
-        // 阴影（只作用于弹出背景）
         MultiEffect {
             source: popupBackground
             anchors.fill: popupBackground
@@ -157,7 +162,6 @@ Item {
             shadowHorizontalOffset: theme.shadowXOffset
         }
 
-        // 弹出背景
         Rectangle {
             id: popupBackground
             width: root.width
@@ -166,21 +170,24 @@ Item {
             clip: true
             height: Math.min(contentLayout.implicitHeight, root.popupMaxHeight)
 
-            // 弹出内容高度变化时的平滑动画
             Behavior on height { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
 
             ColumnLayout {
                 id: contentLayout
                 width: parent.width
-                spacing: 4
+                spacing: 6
+
+                Item { Layout.preferredHeight: 2; Layout.fillWidth: true }
 
                 Repeater {
                     model: root.model
 
                     Item {
-                        width: parent.width
-                        height: 40
-                        // 打开时淡入出现（轻微缩放）
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 48
+                        Layout.leftMargin: 4
+                        Layout.rightMargin: 4
+
                         opacity: root.opened ? 1 : 0
                         Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
 
@@ -190,7 +197,6 @@ Item {
                             origin.y: height / 2
                             xScale: root.opened ? 1.0 : 0.98
                             yScale: root.opened ? 1.0 : 0.98
-                            // 将 Behavior 放到 Scale 对象上，避免绑定到不存在的 Item 属性
                             Behavior on xScale { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
                             Behavior on yScale { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
                         }
@@ -198,17 +204,11 @@ Item {
                         Rectangle {
                             id: itemBg
                             anchors.fill: parent
-                            width: parent.width - 30
-                            radius: 14
-                            color: "transparent"
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: modelData.text
-                                font.pixelSize: 16
-                                font.bold: true
-                                color: root.textColor
-                            }
+                            radius: 6
+                            
+                            property bool hovered: false
+                            color: hovered ? root.hoverColor : (root.backgroundVisible ? root.headerColor : Qt.rgba(root.hoverColor.r, root.hoverColor.g, root.hoverColor.b, 0))
+                            Behavior on color { ColorAnimation { duration: 150 } }
 
                             transform: Scale {
                                 id: itemScale
@@ -238,14 +238,28 @@ Item {
                                     root.opened = false
                                     root.selectionChanged(index, modelData)
                                 }
+                                onEntered: itemBg.hovered = true
+                                onExited: itemBg.hovered = false
                             }
+                        }
+
+                        Text {
+                            anchors.left: parent.left
+                            anchors.leftMargin: root.horizontalPadding - 4
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: modelData.text
+                            font.pixelSize: root.fontSize
+                            font.bold: false
+                            color: root.textColor
+                            visible: true
                         }
                     }
                 }
+
+                Item { Layout.preferredHeight: 2; Layout.fillWidth: true }
             }
         }
 
-        // 状态与过渡：控制下滑 + 渐入 + 轻微回弹
         states: [
             State {
                 name: "closed"
@@ -291,18 +305,10 @@ Item {
         ]
     }
 
-    // 点击外部关闭
     MouseArea {
         anchors.fill: parent
         enabled: root.opened
         onClicked: root.opened = false
-    }
-
-    // 安全增强
-    Component.onCompleted: {
-        if (popupContainer.y + popupContainer.height > parent.height) {
-            popupContainer.y = -popupContainer.height - root.popupSpacing
-        }
     }
 
     onModelChanged: {
