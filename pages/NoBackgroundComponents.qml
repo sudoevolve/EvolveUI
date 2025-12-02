@@ -130,6 +130,16 @@ Flow {
         backgroundVisible: false
     }
 
+    Components.EMenuButton {
+        text: "菜单按钮"
+        backgroundVisible: false
+        menuModel: ["复制", "粘贴", "剪切", "全选"]
+        onItemClicked: (index, text) => {
+            console.log("菜单按钮点击:", index, text)
+            if (toastRef) toastRef.show("点击了: " + text)
+        }
+    }
+
     Components.ENavBar {
         backgroundVisible: false
         model: [
@@ -177,8 +187,8 @@ Flow {
     }
 
     Components.EDropdown {
-        opened: true
         backgroundVisible: false
+        opened: true
         model: [
             { text: "番茄炒鸡蛋" },
             { text: "紫菜汤" },

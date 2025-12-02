@@ -130,6 +130,16 @@ Flow {
         passwordField: true
     }
 
+    Components.EMenuButton {
+        text: "菜单按钮"
+        backgroundVisible: true
+        menuModel: ["复制", "粘贴", "剪切", "全选"]
+        onItemClicked: (index, text) => {
+            console.log("菜单按钮点击:", index, text)
+            if (toastRef) toastRef.show("点击了: " + text)
+        }
+    }
+
     Components.ENavBar {
         model: [
             { display: "主页", iconChar: "\uf015" },

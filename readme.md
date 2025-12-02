@@ -26,6 +26,15 @@ EvolveUI 是一个现代化、高度风格统一的 Qt6 QML 前端组件库，�
   <br/><br/>
   <img src="./preview/4.png" width="45%" alt="预览图3"/>
   <img src="./preview/5.png" width="45%" alt="预览图4"/>
+  <br/><br/>
+  <img src="./preview/demo/1.png" width="45%" alt="演示图1"/>
+  <img src="./preview/demo/2.png" width="45%" alt="演示图2"/>
+  <br/><br/>
+  <img src="./preview/demo/3.png" width="45%" alt="演示图3"/>
+  <img src="./preview/demo/4.png" width="45%" alt="演示图4"/>
+  <br/><br/>
+  <img src="./preview/demo/5.png" width="45%" alt="演示图5"/>
+  <img src="./preview/demo/6.png" width="45%" alt="演示图6"/>
 </div>
 
 > 更多组件效果请查看 [视频演示](https://www.bilibili.com/video/BV1JQ1uBBEPy)
@@ -57,7 +66,8 @@ EvolveUI 是一个现代化、高度风格统一的 Qt6 QML 前端组件库，�
 | `EHoverCard.qml`       | 鼠标悬停浮起卡片容器组件                |
 | `EInput.qml`           | 支持焦点变色与阴影的输入框              |
 | `EList.qml`            | 列表展示组件                            |
-| `Eloader.qml`           | 加载动画组件                  |
+| `Eloader.qml`           | 加载动画组件                          |
+| `EMenuButton.qml`     | 菜单按钮组件                          |
 | `EMusicPlayer.qml`     | 音乐播放器组件                          |
 | `ENavBar.qml`          | 导航栏组件                              |
 | `ENextHolidayCountdown.qml` | 假期倒计时组件                   |
@@ -181,7 +191,7 @@ Button {
 
 ## �📌 依赖说明
 
-* Qt 6.5 及以上版本（建议 6.6+）
+* Qt 6.5 及以上版本（建议 6.9+）
 * 使用 `MultiEffect`（推荐 QtGraphicalEffects 替代方案在 Qt6 中使用）
 * 推荐使用 FontAwesome 字体图标（可自定义）
 

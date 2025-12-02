@@ -8,7 +8,7 @@ Rectangle {
 
     // ==== 外部接口 ====
     property string text: "Button"                   // 按钮文字
-    property string iconCharacter: "\uf013"          // 图标字符 (FontAwesome 等)
+    property string iconCharacter: ""          // 图标字符 (FontAwesome 等)
     property string iconFontFamily: iconFont.name               // 图标字体
     signal clicked                                   // 点击信号
 

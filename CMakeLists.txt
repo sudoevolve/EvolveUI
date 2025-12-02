@@ -55,6 +55,7 @@ qt_add_qml_module(appEvolveUI
         components/Aboutme.qml
         components/EDrawer.qml
         components/EDropdown.qml
+        components/EMenuButton.qml
         components/EMusicPlayer.qml
         components/MusicWindow.qml
         components/EFitnessProgress.qml
@@ -73,6 +74,7 @@ qt_add_qml_module(appEvolveUI
         pages/BaseComponents.qml
         pages/NoBackgroundComponents.qml
         pages/OtherComponents.qml
+        
 
 
 )

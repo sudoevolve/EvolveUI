@@ -7,7 +7,7 @@ ApplicationWindow {
     width: 960
     height: 540
     visible: true
-    title: "demo"
+    title: "{{PROJECT_NAME}}"
 
     color: theme.primaryColor
 
