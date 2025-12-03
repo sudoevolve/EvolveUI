@@ -189,6 +189,15 @@ Item {
         }
     }
 
+    Connections {
+        target: theme
+        enabled: !!theme
+        ignoreUnknownSignals: true
+        function onIsDarkChanged() {
+            if (startState.sourceItem) updateStartStatePosition()
+        }
+    }
+
     // ===== UI 元素 =====
     Rectangle {
         id: appContainer
@@ -248,6 +257,7 @@ Item {
                 onClicked: {
                     if (animationWrapper.isAnimating) return;
                     animationWrapper.isAnimating = true;
+                    updateStartStatePosition()
                     animationWrapper.state = "iconState";
                 }
             }
