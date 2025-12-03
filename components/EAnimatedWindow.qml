@@ -149,6 +149,46 @@ Item {
         _updateThemeOpenCount();
     }
 
+    function updateStartStatePosition() {
+        if (startState.sourceItem) {
+            var map = startState.sourceItem.mapToItem(
+                animationWrapper,
+                startState.sourceItem.width / 2,
+                startState.sourceItem.height / 2
+            );
+            startState.x = map.x - startState.sourceItem.width / 2;
+            startState.y = map.y - startState.sourceItem.height / 2;
+
+            startState.width = startState.sourceItem.width;
+            startState.height = startState.sourceItem.height;
+
+            var sourceCenterX = startState.x + startState.width / 2;
+            var sourceCenterY = startState.y + startState.height / 2;
+            var windowCenterX = width / 2;
+            var windowCenterY = height / 2;
+            var deltaX_norm = (sourceCenterX - windowCenterX) / windowCenterX;
+            var deltaY_norm = (sourceCenterY - windowCenterY) / windowCenterY;
+            startState.rotationX = -deltaY_norm * maxTiltAngle;
+            startState.rotationY = deltaX_norm * maxTiltAngle;
+
+            startStateChanged();
+        }
+    }
+
+    // 响应窗口大小变化
+    onWidthChanged: {
+        if (state === "fullscreenState" && !isAnimating) {
+            appContainer.width = width
+            updateStartStatePosition()
+        }
+    }
+    onHeightChanged: {
+        if (state === "fullscreenState" && !isAnimating) {
+            appContainer.height = height
+            updateStartStatePosition()
+        }
+    }
+
     // ===== UI 元素 =====
     Rectangle {
         id: appContainer
