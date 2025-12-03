@@ -13,8 +13,8 @@ QtObject {
     property bool anyAnimatedWindowOpen: openAnimatedWindowCount > 0
 
     // === 基础颜色 ===
-    property color primaryColor: isDark ? "#121212" : "#ffffff"
-    property color secondaryColor: isDark ? "#212121" : "#E9EEF6"
+    property color primaryColor: isDark ? '#1d1d1d' : '#FFFFFF'
+    property color secondaryColor: isDark ? '#262626' : '#F8FAFD'
     property color textColor: isDark ? "#ffffff" : "#000000"
     property color borderColor: isDark ? "#666666" : "#cccccc"
     property color blurOverlayColor: isDark ? "#4E000000" : "#4EFFFFFF"
