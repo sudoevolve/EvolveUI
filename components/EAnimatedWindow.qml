@@ -52,7 +52,7 @@ Item {
         width: 100,
         height: 100,
         radius: 55,
-        color: theme.secondaryColor,
+        color: Qt.transparent,
         rotationX: 0,
         rotationY: 0,
         sourceItem: null
