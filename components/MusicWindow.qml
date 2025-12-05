@@ -232,7 +232,7 @@ import MusicLibrary 1.0
 
     Timer {
         id: lyricScrollFlagTimer
-        interval: 420
+        interval: 900
         repeat: false
         onTriggered: root.isLyricScrolling = false
     }
@@ -380,7 +380,7 @@ import MusicLibrary 1.0
     }
     
 
-    // 左侧圆形封面（旋转）
+    // 左侧封面
     Item {
         id: rotatingCoverContainer
         anchors.left: parent.left
@@ -635,7 +635,7 @@ import MusicLibrary 1.0
                 currentIndex: currentLyricIndex
                 reuseItems: true
                 // 高亮移动与范围：将当前行保持在视图偏上的位置
-                highlightMoveDuration: 380
+                highlightMoveDuration: 800
                 highlightFollowsCurrentItem: true
                 preferredHighlightBegin: height * 0.25
                 preferredHighlightEnd: height * 0.45
@@ -650,14 +650,59 @@ import MusicLibrary 1.0
                     }
                 }
 
-                // 内容滚动缓动动画
+                // 内容滚动缓动动画 - Apple Music 风格平滑滚动
                 Behavior on contentY {
-                    NumberAnimation { duration: 320; easing.type: Easing.OutCubic }
+                    NumberAnimation { duration: 800; easing.type: Easing.OutQuint }
                 }
 
                 delegate: Item {
                     width: lyricList.width
                     height: lyricList.rowHeight
+
+                    // 歌词缓动偏移：模拟 Apple Music 随动效果
+                    transform: Translate {
+                        id: lyricTrans
+                        y: 0
+                    }
+
+                    Connections {
+                        target: root
+                        function onCurrentLyricIndexChanged() {
+                            // 仅处理向下滚动（索引增加）时的“拖拽”延迟效果
+                            if (index > currentLyricIndex) {
+                                var diff = index - currentLyricIndex
+                                // 距离越远，初始向下偏移越大，造成“滞后”感
+                                // 限制最大偏移以免过分
+                                var dist = Math.min(diff, 8)
+                                lyricTrans.y = dist * 13
+                                // 延迟归位
+                                recoverAnim.delayDuration = dist * 100
+                                recoverAnim.restart()
+                            } else if (index === currentLyricIndex) {
+                                // 当前行也稍微带一点动量，加大偏移量让回弹更明显
+                                lyricTrans.y = 30
+                                recoverAnim.delayDuration = 0
+                                recoverAnim.restart()
+                            }
+                        }
+                    }
+
+                    SequentialAnimation {
+                        id: recoverAnim
+                        property int delayDuration: 0
+                        
+                        PauseAnimation { duration: recoverAnim.delayDuration }
+                        NumberAnimation {
+                            target: lyricTrans
+                            property: "y"
+                            to: 0
+                            duration: 800
+                            easing.type: Easing.OutBack
+                            // 当前行回弹系数大一些，其他行小一些
+                            easing.overshoot: (index === currentLyricIndex) ? 1.5 : 1.4
+                        }
+                    }
+
                     // 使用 index 与 currentLyricIndex 比较，避免 ListView.isCurrentItem 在嵌套时不稳定
                     readonly property bool isActive: index === currentLyricIndex
                     // 视口渐隐：顶部两行与底部两行做渐变透明
@@ -672,10 +717,10 @@ import MusicLibrary 1.0
                         anchors.fill: parent
                         // 顶/底部渐隐：靠近边缘逐步降低整体不透明度
                         opacity: (isActive ? 1.0 : 0.6) * edgeFactor
-                        Behavior on opacity { enabled: !root.isLyricScrolling; NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                        Behavior on opacity { NumberAnimation { duration: 600; easing.type: Easing.OutCubic } }
                         // 放大动画使当前行视觉更突出
                         scale: isActive ? 1.06 : 1.0
-                        Behavior on scale { NumberAnimation { duration: 360; easing.type: Easing.OutCubic } }
+                        Behavior on scale { NumberAnimation { duration: 800; easing.type: Easing.OutQuint } }
                         layer.enabled: isActive
                         layer.smooth: true
 
@@ -688,8 +733,8 @@ import MusicLibrary 1.0
                             text: modelData.text
                             wrapMode: Text.NoWrap
                             horizontalAlignment: Text.AlignLeft
-                            font.pixelSize: 20
-                            font.bold: isActive
+                            font.pixelSize: 24
+                            font.weight: isActive ? Font.Bold : Font.Normal
                             color: theme ? theme.textColor : "#ffffff"
                             renderType: Text.QtRendering
                             opacity: isActive ? 1.0 : 0.6
@@ -713,14 +758,13 @@ import MusicLibrary 1.0
                                 id: fillText
                                 anchors.verticalCenter: parent.verticalCenter
                                 anchors.left: parent.left
-                                width: parent.width
+                                width: parent.width + 0.1
                                 text: modelData.text
                                 wrapMode: Text.NoWrap
                                 horizontalAlignment: Text.AlignLeft
-                                font.pixelSize: baseText.font.pixelSize
-                                font.bold: isActive
-                                color: theme ? theme.focusColor : "#00C4B3"
-                                renderType: Text.QtRendering
+                                font.pixelSize: baseText.font.pixelSize + 0.1
+                                font.weight: isActive ? Font.Bold : Font.Normal
+                                color: Qt.lighter(theme ? theme.focusColor : "#00C4B3", 1.6)
                             }
                         }
                     }
@@ -787,8 +831,8 @@ import MusicLibrary 1.0
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.leftMargin: 40
-        anchors.rightMargin: 40
+        anchors.leftMargin: 240
+        anchors.rightMargin: 240
         anchors.bottomMargin: 24
         height: 56
         z: 6
