@@ -74,9 +74,6 @@ qt_add_qml_module(appEvolveUI
         pages/BaseComponents.qml
         pages/NoBackgroundComponents.qml
         pages/OtherComponents.qml
-        
-
-
 )
 
 
