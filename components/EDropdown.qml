@@ -18,17 +18,18 @@ Item {
     // === 样式属性 ===
     property bool backgroundVisible: true
     property real radius: 20
-    property color headerColor: theme.secondaryColor
+    property color containerColor: theme.secondaryColor
     property color textColor: theme.textColor
     property color shadowColor: theme.shadowColor
     property bool shadowEnabled: true
     property int fontSize: 16
-    property color hoverColor: Qt.darker(headerColor, 1.2)
-    property int headerHeight: 54
+    property color hoverColor: Qt.darker(containerColor, 1.2)
+    property int headerHeight: 48
+    property int itemHeight: 40
     property int popupMaxHeight: 300
     property int horizontalPadding: 24
     property real pressedScale: 0.96
-    property int popupSpacing: 6
+    property int popupSpacing: 8
 
     // === 弹出动画参数 ===
     property int popupEnterDuration: 260
@@ -62,7 +63,7 @@ Item {
             id: headerBackground
             anchors.fill: parent
             radius: root.radius
-            color: root.backgroundVisible ? root.headerColor : "transparent"
+            color: root.backgroundVisible ? root.containerColor : "transparent"
             border.color: root.backgroundVisible ? "transparent" : root.textColor
             border.width: root.backgroundVisible ? 0 : 1
             visible: root.backgroundVisible || root.shadowEnabled
@@ -98,7 +99,7 @@ Item {
                     text: root.selectedIndex >= 0 ? root.model[root.selectedIndex].text : root.title
                     color: root.textColor
                     font.pixelSize: root.fontSize
-                    font.bold: true
+                    font.bold: false
                     elide: Text.ElideRight
                     verticalAlignment: Text.AlignVCenter
                 }
@@ -167,7 +168,7 @@ Item {
             id: popupBackground
             width: root.width
             radius: root.radius
-            color: root.backgroundVisible ? root.headerColor : "transparent"
+            color: root.backgroundVisible ? root.containerColor : "transparent"
             clip: true
             height: Math.min(contentListView.contentHeight + 10, root.popupMaxHeight)
 
@@ -183,8 +184,8 @@ Item {
                 model: root.model
 
                 delegate: Item {
-                    width: contentListView.width - 8
-                    height: 48
+                    width: contentListView.width - 24
+                    height: root.itemHeight
                     anchors.horizontalCenter: parent.horizontalCenter
 
                     opacity: root.opened ? 1 : 0

@@ -35,10 +35,6 @@ EvolveUI 是一个现代化、高度风格统一的 Qt6 QML 前端组件库，�
   <br/><br/>
   <img src="./preview/demo/5.png" width="45%" alt="演示图5"/>
   <img src="./preview/demo/6.png" width="45%" alt="演示图6"/>
-  <br/><br/>
-  <img src="./preview/demo/7.png" width="45%" alt="演示图7"/>
-  <img src="./preview/demo/8.png" width="45%" alt="演示图8"/>
-
 </div>
 
 > 更多组件效果请查看 [视频演示](https://www.bilibili.com/video/BV1JQ1uBBEPy)
@@ -53,6 +49,7 @@ EvolveUI 是一个现代化、高度风格统一的 Qt6 QML 前端组件库，�
 | `EAvatar.qml`          | 头像组件                               |
 | `EAreaChart.qml`       | 折线图组件                              |
 | `EBatteryCard.qml`     | 电池状态卡片组件                        |
+| `EBarChart.qml`        | 柱状图组件                              |
 | `EBlurCard.qml`        | 高斯模糊卡片组件                        |
 | `EButton.qml`          | 带图标 + 动画的圆角按钮组件              |
 | `ECalendar.qml`        | 日历组件                                |
@@ -75,6 +72,7 @@ EvolveUI 是一个现代化、高度风格统一的 Qt6 QML 前端组件库，�
 | `EMusicPlayer.qml`     | 音乐播放器组件                          |
 | `ENavBar.qml`          | 导航栏组件                              |
 | `ENextHolidayCountdown.qml` | 假期倒计时组件                   |
+| `EPieChart.qml`       | 饼图组件                                |
 | `ERadioButton.qml`     | 动画单选组件                            |
 | `ESimpleDatePicker.qml`| 简易日期选择组件                        |
 | `ESlider.qml`          | 支持滑块动画的调节组件                  |

@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Effects
+import QtQuick.Controls.Basic as Basic
 
 Item {
     id: root
@@ -46,7 +47,9 @@ Item {
         border.color: root.backgroundVisible 
                        ? theme.getBorderColor(textField.activeFocus)
                        : (textField.activeFocus ? theme.focusColor : theme.textColor)
-        border.width: 1
+        border.width: textField.activeFocus ? 2 : 1
+        Behavior on border.width { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+        Behavior on border.color { ColorAnimation { duration: 150 } }
         color: root.backgroundVisible ? theme.secondaryColor : "transparent"
         opacity: root.enabled ? 1.0 : 0.6
     }
@@ -59,7 +62,7 @@ Item {
         spacing: 6
 
         // === 输入框主体 ===
-        TextField {
+        Basic.TextField {
             id: textField
             Layout.fillWidth: true
             Layout.fillHeight: true

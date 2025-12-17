@@ -1,5 +1,5 @@
 // ETheme.qml
-import QtQuick 2.15
+import QtQuick
 
 QtObject {
     id: theme
@@ -34,23 +34,6 @@ QtObject {
     // === 背景图片===
     property url backgroundImage: isDark ? "qrc:/new/prefix1/fonts/pic/02.jpg" : "qrc:/new/prefix1/fonts/pic/01.jpg"
 
-    // === 全局可用 Shader 列表（QSB 资源路径） ===
-    // 注意：由 CMake qt_add_shaders 生成，前缀为 "/"，在 QML 中以 qrc:/ 访问
-    property var availableShaders: [
-        "qrc:/shaders/cube.frag.qsb",
-        "qrc:/shaders/Accretion.frag.qsb",
-        "qrc:/shaders/Cubelines.frag.qsb",
-        "qrc:/shaders/mandelbulb.frag.qsb",
-        "qrc:/shaders/Seascape.frag.qsb",
-    ]
-
-    property int currentShaderIndex: 0
-    function nextShaderUrl() {
-        if (!availableShaders || availableShaders.length === 0)
-            return "";
-        currentShaderIndex = (currentShaderIndex + 1) % availableShaders.length;
-        return availableShaders[currentShaderIndex];
-    }
 
     // === 方法 ===
     function getBorderColor(focused) {

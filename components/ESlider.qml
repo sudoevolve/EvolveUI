@@ -110,6 +110,8 @@ Rectangle {
         // 无背景时：选中用主题高亮色，未选中用次级色
         border.color: root.backgroundVisible ? borderColor : (focused ? theme.focusColor : theme.textColor)
         border.width: focused ? 2 : 1
+        Behavior on border.width { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+        Behavior on border.color { ColorAnimation { duration: 150 } }
     }
 
     // === 布局：文本 + 滑动条 + 值显示 ===

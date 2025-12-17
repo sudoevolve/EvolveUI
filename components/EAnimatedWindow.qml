@@ -29,7 +29,7 @@ Item {
     }
 
     // ===== 可配置属性  =====
-    property int animDuration: 450
+    property int animDuration: 350
     property real segment1Progress: 0.8
     property real segment1DurationFactor: 0.3
     property real segment2DurationFactor: 0.7
@@ -91,8 +91,8 @@ Item {
         function findNonTransparentColor(item) {
             if (!item || !item.visible || item.opacity <= 0.01) return null;
 
-            if (isVisibleColor(item.fill)) {
-                return item.fill;
+            if (isVisibleColor(item.containerColor)) {
+                return item.containerColor;
             }
 
             if (isVisibleColor(item.color)) {

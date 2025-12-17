@@ -7,7 +7,7 @@ Flow {
     property var toastRef
     // 可视区域宽度（由 Main.qml 传入并保持同步）
     property int viewportWidth: 0
-    spacing: 16
+    spacing: 8
     width: viewportWidth > 0 ? viewportWidth : 850
 
     Rectangle {
@@ -40,7 +40,7 @@ Flow {
     }
 
     Components.EButton {
-        text: theme.isDark ? "切换为日间模式" : "切换为夜间模式"
+        text: theme.isDark ? "日间模式" : "夜间模式"
         iconCharacter: theme.isDark ? "\uf186" : "\uf185"
         iconRotateOnClick: true //图标旋转
         onClicked: {
@@ -197,9 +197,6 @@ Flow {
     }
 
     Components.EList {
-        radius: 15
-        width: 200
-        height: 230
         model: ListModel {
             ListElement { display: "个人信息"; iconChar: "\uf007" }
             ListElement { display: "应用设置"; iconChar: "\uf013" }
@@ -314,6 +311,74 @@ Flow {
         onPointHovered: function(index, dataPoint) {
             console.log("悬停数据点：", index, dataPoint.label, dataPoint.value)
         }
+    }
+
+    Components.EBarChart {
+        width: 830
+        height: 400
+        title: "柱状图示例"
+        subtitle: "季度销售业绩对比"
+        
+        dataSeries: [
+            {
+                name: "2023",
+                color: theme.focusColor,
+                data: [
+                    {label: "Q1", value: 100}, 
+                    {label: "Q2", value: 150},
+                    {label: "Q3", value: 200},
+                    {label: "Q4", value: 180}
+                ]
+            },
+            {
+                name: "2024",
+                color: Qt.lighter(theme.focusColor, 1.4),
+                data: [
+                    {label: "Q1", value: 120}, 
+                    {label: "Q2", value: 180},
+                    {label: "Q3", value: 240},
+                    {label: "Q4", value: 210}
+                ]
+            }
+        ]
+        
+        onPointClicked: function(seriesIndex, dataIndex, dataPoint) {
+            console.log("点击柱状图:", seriesIndex, dataIndex, dataPoint.value)
+        }
+    }
+
+    Components.EPieChart {
+        width: 400
+        height: 400
+        title: "用户分布"
+        subtitle: "按设备类型"
+        innerRadius: 60 // 环形图模式
+        
+        dataSeries: [{
+            name: "Users",
+            data: [
+                {label: "Desktop", value: 300, color: "#FF6384"},
+                {label: "Mobile", value: 150, color: "#36A2EB"},
+                {label: "Tablet", value: 80, color: "#FFCE56"}
+            ]
+        }]
+    }
+
+    Components.EPieChart {
+        width: 400
+        height: 400
+        title: "支出分析"
+        subtitle: "普通饼图"
+        
+        dataSeries: [{
+            name: "Cost",
+            data: [
+                {label: "Rent", value: 2000, color: "#4BC0C0"},
+                {label: "Food", value: 1500, color: "#9966FF"}, 
+                {label: "Transport", value: 500, color: "#FF9F40"},
+                {label: "Others", value: 800, color: "#C9CBCF"}
+            ]
+        }]
     }
 
     Components.EDataTable {

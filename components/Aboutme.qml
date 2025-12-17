@@ -170,7 +170,7 @@ Item {
                 iconColor: "#E3B341"
                 text: "关于我"
                 onClicked: {
-                        Qt.openUrlExternally("https://github.com/sudoevolve")
+                        Qt.openUrlExternally("https://sudoevolve.github.io")
                     }
             }
 
@@ -179,9 +179,9 @@ Item {
                 iconFontFamily: iconFont.name
                 iconRotateOnClick: true
                 iconColor: theme ? theme.focusColor : "#00C4B3"
-                text: "我的网站"
+                text: "组件文档"
                 onClicked: {
-                    Qt.openUrlExternally("https://sudoevolve.github.io")
+                    Qt.openUrlExternally("http://evolveui.top/")
                 }
             }
         }

@@ -154,7 +154,6 @@ import MusicLibrary 1.0
     // 根据音源路径推断并加载同名 .lrc 文件
     function loadLyricsForSource(src) {
         if (!src || src.length === 0) {
-            console.warn("歌词加载：音频源为空")
             lyricsEntries = []
             lyricsAvailable = false
             lyricsFilePath = ""
@@ -165,14 +164,12 @@ import MusicLibrary 1.0
         // 使用 C++ 侧读取歌词文本
         var raw = musicLib.loadLyricsText(src)
         var lrcFileUrl = musicLib.findLyricsFileForSource(src)
-        console.log("歌词加载：C++读取完成，长度=", (raw || "").length, "file=", lrcFileUrl)
         if (raw && raw.length > 0) {
             var parsed = parseLrc(raw)
             if (parsed && parsed.length > 0) {
                 lyricsEntries = parsed
                 lyricsAvailable = true
                 lyricsFilePath = lrcFileUrl
-                console.log("歌词解析成功：行数", parsed.length)
                 // 加载完成后，立即根据当前播放进度定位到对应歌词行，避免重新打开时回到顶部
                 if (sourceItem && typeof sourceItem.positionMs === "number") {
                     updateLyricIndex(sourceItem.positionMs)
@@ -188,7 +185,6 @@ import MusicLibrary 1.0
         }
 
         // 未找到或解析失败：清空并显示占位
-        console.warn("歌词未找到或解析失败")
         lyricsEntries = []
         lyricsAvailable = false
         lyricsFilePath = lrcFileUrl
@@ -650,7 +646,7 @@ import MusicLibrary 1.0
                     }
                 }
 
-                // 内容滚动缓动动画 - Apple Music 风格平滑滚动
+                // 内容滚动缓动动画
                 Behavior on contentY {
                     NumberAnimation { duration: 800; easing.type: Easing.OutQuint }
                 }
@@ -764,7 +760,7 @@ import MusicLibrary 1.0
                                 horizontalAlignment: Text.AlignLeft
                                 font.pixelSize: baseText.font.pixelSize + 0.1
                                 font.weight: isActive ? Font.Bold : Font.Normal
-                                color: Qt.lighter(theme ? theme.focusColor : "#00C4B3", 1.6)
+                                color:theme.focusColor
                             }
                         }
                     }

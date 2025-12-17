@@ -14,23 +14,38 @@ Rectangle {
     // === 样式属性 ===
     property bool backgroundVisible: true
     property real radius: 20
+    property string size: "m"
     readonly property real contentScale: 0.4
     readonly property real trackWidth: root.height * 1
     readonly property real trackHeight: root.height * contentScale
     readonly property real thumbSize: root.height * contentScale - 2
-    property int fontSize: root.height * contentScale
-    property color buttonColor: theme.secondaryColor
-    property color hoverColor: Qt.darker(buttonColor, 1.2)
+    property int fontSize: md3.current.fontsize
+    property int labelSpacing: md3.current.spacing
+    property color containerColor: theme.secondaryColor
+    property color hoverColor: Qt.darker(containerColor, 1.2)
     property color textColor: theme.textColor
     property color thumbColor: theme.focusColor
     property bool shadowEnabled: true
     property real pressedScale: 0.96
     property color shadowColor: theme.shadowColor
-    readonly property int horizontalPadding: 16
+    readonly property int paddingLeft: md3.current.padding
+    readonly property int paddingRight: md3.current.padding
+
+    QtObject {
+        id: md3
+        property var tokens: ({
+            xs: { height: 32, padding: 12, fontsize: 12, spacing: 4 },
+            s:  { height: 40, padding: 16, fontsize: 16, spacing: 8 },
+            m:  { height: 56, padding: 24, fontsize: 20, spacing: 8 },
+            l:  { height: 96, padding: 48, fontsize: 24, spacing: 12 },
+            xl: { height: 136, padding: 64, fontsize: 32, spacing: 16 }
+        })
+        readonly property var current: tokens[root.size] || tokens.m
+    }
 
     // === 尺寸与基础样式 ===
-    implicitHeight: 52
-    implicitWidth: layout.implicitWidth + horizontalPadding * 2
+    implicitHeight: md3.current.height
+    implicitWidth: layout.implicitWidth + paddingLeft + paddingRight
     color: "transparent"
 
     // === 缩放动画 ===
@@ -55,7 +70,7 @@ Rectangle {
         shadowBlur: theme.shadowBlur
         shadowHorizontalOffset: theme.shadowXOffset
         shadowVerticalOffset: theme.shadowYOffset
-        visible: root.backgroundVisible
+        visible: root.backgroundVisible && root.shadowEnabled
     }
 
     // === 背景矩形 ===
@@ -65,7 +80,7 @@ Rectangle {
         radius: root.radius
         color: mouseArea.containsMouse && root.backgroundVisible
             ? root.hoverColor
-            : (root.backgroundVisible ? root.buttonColor : "transparent")
+            : (root.backgroundVisible ? root.containerColor : "transparent")
         visible: root.backgroundVisible
         Behavior on color { ColorAnimation { duration: 150 } }
         Behavior on opacity { NumberAnimation { duration: 100 } }
@@ -75,7 +90,7 @@ Rectangle {
     RowLayout {
         id: layout
         anchors.centerIn: parent
-        spacing: 12
+        spacing: labelSpacing
 
         // === 滑块轨道 ===
         Rectangle {

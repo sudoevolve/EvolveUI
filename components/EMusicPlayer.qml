@@ -131,17 +131,14 @@ Rectangle {
         source: root.source
         
         onTitleChanged: {
-            console.log("C++ 标题更新:", title)
             root.songTitle = title
         }
         
         onArtistChanged: {
-            console.log("C++ 艺术家更新:", artist)
             root.artistName = artist
         }
         
         onCoverImageUrlChanged: {
-            console.log("C++ 封面更新:", coverImageUrl)
             // 移除时间戳，防止生成不可复用的纹理资源导致内存增长
             const url = coverImageUrl.toString()
             if (url.length === 0) {
@@ -156,12 +153,7 @@ Rectangle {
         }
         
         onDurationChanged: {
-            console.log("C++ 时长更新:", duration)
             root.duration = duration
-        }
-        
-        onMetadataLoaded: {
-            console.log("C++ 元数据加载完成")
         }
     }
 
@@ -215,13 +207,7 @@ Rectangle {
             }
         }
         
-        onDurationChanged: {
-            console.log("音频时长:", Math.floor(duration / 1000), "秒")
-        }
         
-        onMetaDataChanged: {
-            console.log("QML MediaPlayer元数据已更改（已由C++处理）")
-        }
 
         onMediaStatusChanged: {
             if (mediaStatus === MediaPlayer.EndOfMedia) {
@@ -355,8 +341,8 @@ Rectangle {
                         if (a === 0) continue
                         var r = data[i], g = data[i + 1], b = data[i + 2]
                         var hsv = rgbToHsv(r, g, b)
-                        // 选择“显眼”像素：饱和度高、亮度适中
-                        if (hsv.s > 0.4 && hsv.v > 0.2 && hsv.v < 0.9) {
+                        // 放宽筛选条件，让更多颜色进入候选，最后再统一调整亮度
+                        if (hsv.s > 0.15 && hsv.v > 0.15 && hsv.v < 0.95) {
                             var bin = Math.floor((hsv.h / 360.0) * bins)
                             if (bin < 0) bin = 0
                             if (bin >= bins) bin = bins - 1
@@ -379,7 +365,7 @@ Rectangle {
                         outG = sumG[bestBin] / bestCount
                         outB = sumB[bestBin] / bestCount
                     } else {
-                        // 回退：取整体平均色（不做浅化）
+                        // 回退：取整体平均色
                         var totalR = 0, totalG = 0, totalB = 0, totalN = 0
                         for (var k = 0; k < data.length; k += 4) {
                             var aa = data[k + 3]
@@ -402,8 +388,23 @@ Rectangle {
                         }
                     }
 
+                    // === 优化：基于 HSL 调整亮度，避免过暗或过亮 ===
+                    var hsl = rgbToHsl(outR, outG, outB)
+                    
+                    // 目标亮度范围：0.35 - 0.75
+                    var targetL = Math.max(0.35, Math.min(0.75, hsl.l))
+                    
+                    // 如果原色有一定饱和度但被调亮了，可能变灰，适当补一点饱和度
+                    if (hsl.s > 0.1) {
+                         // 保持至少 0.3 的饱和度，防止颜色太灰
+                         hsl.s = Math.max(hsl.s, 0.3)
+                    }
+                    
+                    hsl.l = targetL
+                    var finalRgb = hslToRgb(hsl.h, hsl.s, hsl.l)
+
                     // 设置波纹颜色（半透明）与主题显色（不透明）
-                    var accent = Qt.rgba(outR / 255.0, outG / 255.0, outB / 255.0, 1.0)
+                    var accent = Qt.rgba(finalRgb.r / 255.0, finalRgb.g / 255.0, finalRgb.b / 255.0, 1.0)
                     root.coverProminentColor = accent
                 }
             }
@@ -1011,6 +1012,53 @@ Rectangle {
             h *= 60
         }
         return { h: h, s: s, v: v }
+    }
+
+    // 辅助函数：RGB -> HSL
+    function rgbToHsl(r, g, b) {
+        r /= 255; g /= 255; b /= 255
+        var max = Math.max(r, g, b), min = Math.min(r, g, b)
+        var h, s, l = (max + min) / 2
+
+        if (max === min) {
+            h = s = 0 // achromatic
+        } else {
+            var d = max - min
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break
+                case g: h = (b - r) / d + 2; break
+                case b: h = (r - g) / d + 4; break
+            }
+            h /= 6
+        }
+        return { h: h, s: s, l: l }
+    }
+
+    // 辅助函数：HSL -> RGB
+    function hslToRgb(h, s, l) {
+        var r, g, b
+
+        if (s === 0) {
+            r = g = b = l // achromatic
+        } else {
+            var hue2rgb = function(p, q, t) {
+                if (t < 0) t += 1
+                if (t > 1) t -= 1
+                if (t < 1/6) return p + (q - p) * 6 * t
+                if (t < 1/2) return q
+                if (t < 2/3) return p + (q - p) * (2/3 - t) * 6
+                return p
+            }
+
+            var q = l < 0.5 ? l * (1 + s) : l + s - l * s
+            var p = 2 * l - q
+            r = hue2rgb(p, q, h + 1/3)
+            g = hue2rgb(p, q, h)
+            b = hue2rgb(p, q, h - 1/3)
+        }
+
+        return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) }
     }
     
     // 自动播放列表管理

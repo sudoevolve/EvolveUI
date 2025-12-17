@@ -227,7 +227,7 @@ ApplicationWindow {
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.topMargin: 420
-            anchors.leftMargin: 60
+            anchors.leftMargin: 50
 
             model: ListModel {
                 ListElement { display: "基础组件"; iconChar: "\uf118" }
@@ -287,9 +287,9 @@ ApplicationWindow {
          anchors.bottom: parent.bottom
          anchors.left: parent.left
          anchors.bottomMargin: 60
-         anchors.leftMargin: 20
+         anchors.leftMargin: 30
          backgroundVisible: false
-         text: theme.isDark ? "切换为日间模式" : "切换为夜间模式"
+         text: theme.isDark ? "white" : "dark"
          iconCharacter: theme.isDark ? "\uf186" : "\uf185"
          iconRotateOnClick: true
          onClicked: {
@@ -597,7 +597,7 @@ ApplicationWindow {
                 radius: 12
                 backgroundVisible: true
                 text: ""
-                iconCharacter: "\uf2d1"
+                iconCharacter: "\uf068"
                 onClicked: root.showMinimized()
             }
 

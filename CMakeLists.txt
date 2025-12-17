@@ -26,54 +26,16 @@ qt_add_executable(appEvolveUI
 # ==========================
 # QML 模块
 # ==========================
+file(GLOB QML_COMPONENTS CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "components/*.qml")
+file(GLOB QML_PAGES CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "pages/*.qml")
+
 qt_add_qml_module(appEvolveUI
     URI EvolveUI
     VERSION 1.0
     QML_FILES
         Main.qml
-        components/EButton.qml
-        components/EInput.qml
-        components/EList.qml
-        components/EHoverCard.qml
-        components/ETheme.qml
-        components/ESwitchButton.qml
-        components/ECheckBox.qml
-        components/ERadioButton.qml
-        components/ESlider.qml
-        components/EBlurCard.qml
-        components/ENavBar.qml
-        components/ETimeDisplay.qml
-        components/EAvatar.qml
-        components/EAccordion.qml
-        components/ECard.qml
-        components/ECalendar.qml
-        components/ECarousel.qml
-        components/EClock.qml
-        components/ECardWithTextArea.qml
-        components/EDataTable.qml
-        components/EAnimatedWindow.qml
-        components/Aboutme.qml
-        components/EDrawer.qml
-        components/EDropdown.qml
-        components/EMenuButton.qml
-        components/EMusicPlayer.qml
-        components/MusicWindow.qml
-        components/EFitnessProgress.qml
-        components/EYearProgress.qml
-        components/ENextHolidayCountdown.qml
-        components/EClockCard.qml
-        components/EColorPicker.qml
-        components/EHitokotoCard.qml
-        components/EBatteryCard.qml
-        components/ESimpleDatePicker.qml
-        components/EAlertDialog.qml
-        components/ELoader.qml
-        components/EToast.qml
-        components/EAreaChart.qml
-        components/EPlaylist.qml
-        pages/BaseComponents.qml
-        pages/NoBackgroundComponents.qml
-        pages/OtherComponents.qml
+        ${QML_COMPONENTS}
+        ${QML_PAGES}
 )
 
 

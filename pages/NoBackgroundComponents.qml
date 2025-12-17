@@ -7,7 +7,7 @@ Flow {
     property var toastRef
     // 可视区域宽度（由 Main.qml 传入并保持同步）
     property int viewportWidth: 0
-    spacing: 16
+    spacing: 8
     width: viewportWidth > 0 ? viewportWidth : 850
 
     Rectangle {
@@ -204,7 +204,7 @@ Flow {
         backgroundVisible: false
         radius: 15
         width: 200
-        height: 230
+        height: 200
         model: ListModel {
             ListElement { display: "个人信息"; iconChar: "\uf007" }
             ListElement { display: "应用设置"; iconChar: "\uf013" }
@@ -308,6 +308,44 @@ Flow {
         onPointHovered: function(index, dataPoint) {
             console.log("悬停数据点：", index, dataPoint.label, dataPoint.value)
         }
+    }
+
+    Components.EBarChart {
+        backgroundVisible: false
+        width: 830
+        height: 400
+        title: "无背景柱状图"
+        subtitle: "年度数据"
+        
+        dataSeries: [
+            {
+                name: "Revenue",
+                color: theme.focusColor,
+                data: [
+                    {label: "2020", value: 300}, 
+                    {label: "2021", value: 450},
+                    {label: "2022", value: 400},
+                    {label: "2023", value: 550}
+                ]
+            }
+        ]
+    }
+
+    Components.EPieChart {
+        backgroundVisible: false
+        width: 400
+        height: 400
+        title: "无背景饼图"
+        subtitle: "数据分布"
+        
+        dataSeries: [{
+            name: "Share",
+            data: [
+                {label: "A", value: 30, color: "#FF6384"},
+                {label: "B", value: 50, color: "#36A2EB"},
+                {label: "C", value: 20, color: "#FFCE56"}
+            ]
+        }]
     }
 
     Components.EDataTable {

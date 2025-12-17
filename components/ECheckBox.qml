@@ -16,8 +16,8 @@ Rectangle {
     property bool backgroundVisible: true       // 背景是否显示
     property real radius: 20                    // 圆角半径
     property int fontSize: 16                   // 文本字体大小
-    property color buttonColor: theme.secondaryColor // 按钮颜色
-    property color hoverColor: Qt.darker(buttonColor, 1.2) // 悬浮颜色
+    property color containerColor: theme.secondaryColor // 容器颜色
+    property color hoverColor: Qt.darker(containerColor, 1.2) // 悬浮颜色
     property color textColor: theme.textColor  // 文本颜色
     property color checkmarkColor: theme.focusColor // 勾选颜色
     property real pressedScale: 0.96           // 按下时缩放比例
@@ -27,9 +27,9 @@ Rectangle {
     // ==== 布局相关尺寸 ====
     property int horizontalPadding: 24
     property int boxSize: 24
-    property int spacingBetweenBoxAndText: 12
-    property int verticalSpacingBetweenButtons: 6
-    property int buttonHeight: 48
+    property int labelSpacing: 8
+    property int buttonsSpacing: 6
+    property int buttonHeight: 40
 
     // ==== 隐藏文本控件，用于测量文字宽度 ====
     Text {
@@ -56,9 +56,9 @@ Rectangle {
     onModelChanged: updateMaxTextWidth()
 
     // ==== 尺寸计算 ====
-    implicitWidth: horizontalPadding * 2 + boxSize + spacingBetweenBoxAndText + maxTextWidth + 30
+    implicitWidth: horizontalPadding * 2 + boxSize + labelSpacing + maxTextWidth + 30
     implicitHeight: model.length > 0
-        ? model.length * (buttonHeight + verticalSpacingBetweenButtons) - verticalSpacingBetweenButtons + 20
+        ? model.length * (buttonHeight + buttonsSpacing) - buttonsSpacing + 20
         : buttonHeight + 20
 
     width: implicitWidth
@@ -71,7 +71,7 @@ Rectangle {
         anchors.fill: parent
         clip: true
         radius: root.radius
-        color: root.buttonColor
+        color: root.containerColor
         visible: root.backgroundVisible
 
         layer.enabled: root.shadowEnabled && root.backgroundVisible
@@ -90,7 +90,7 @@ Rectangle {
         anchors.top: parent.top
         anchors.topMargin: 10
         anchors.horizontalCenter: parent.horizontalCenter
-        spacing: verticalSpacingBetweenButtons
+        spacing: buttonsSpacing
         width: implicitWidth
     }
 
@@ -101,7 +101,7 @@ Rectangle {
 
         Rectangle {
             id: btn
-            implicitWidth: horizontalPadding * 2 + boxSize + spacingBetweenBoxAndText + label.implicitWidth + 10
+            implicitWidth: horizontalPadding * 2 + boxSize + labelSpacing + label.implicitWidth + 10
             height: buttonHeight
             radius: root.radius * 0.5
 
@@ -110,7 +110,7 @@ Rectangle {
 
             // 背景颜色，悬浮变色
             color: root.backgroundVisible
-                ? (hovered ? root.hoverColor : root.buttonColor)
+                ? (hovered ? root.hoverColor : root.containerColor)
                 : "transparent"
 
             opacity: mouseArea.pressed ? 0.85 : 1.0
@@ -139,7 +139,7 @@ Rectangle {
                 anchors.fill: parent
                 anchors.leftMargin: horizontalPadding
                 anchors.rightMargin: horizontalPadding
-                spacing: spacingBetweenBoxAndText
+                spacing: labelSpacing
                 Layout.alignment: Qt.AlignVCenter
 
                 // ==== 复选框方块 ====
@@ -153,14 +153,14 @@ Rectangle {
                     color: checked ? root.checkmarkColor : "transparent"
                     Behavior on color { ColorAnimation { duration: 150 } }
 
-                    Text {
-                        anchors.centerIn: parent
-                        visible: checked
-                        text: "\u2713" // 勾号
-                        font.pixelSize: 16
-                        color: root.buttonColor
-                    }
+                Text {
+                    anchors.centerIn: parent
+                    visible: checked
+                    text: "\u2713" // 勾号
+                    font.pixelSize: 16
+                    color: root.textColor
                 }
+            }
 
                 // ==== 文本标签 ====
                 Text {

@@ -3,6 +3,7 @@ import QtQuick.Effects
 
 Item {
     id: root
+    property var theme
     property string text: ""
     property int duration: 2200
     property bool shadowEnabled: true

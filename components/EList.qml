@@ -6,10 +6,10 @@ import QtQuick.Effects
 
 Item {
     id: root
+    clip: false
 
     width: 200
-    height: 230
-    clip: false
+    height: 200
 
     // === 接口属性 & 信号 ===
     property var model                    // 列表数据模型
@@ -18,14 +18,18 @@ Item {
     // === 样式属性 ===
     property bool backgroundVisible: true
     property real radius: 20
-    property int itemHeight: 48
+    property int buttonHeight: 40
+    property int itemHeight: buttonHeight
     property int itemFontSize: 16
     property int itemIconSize: 20
-    property int listPadding: 12
+    property int horizontalPadding: 24
+    property int labelSpacing: 8
+    property int buttonsSpacing: 6
+    property int listPadding: horizontalPadding
     property real pressedScale: 0.96
     property bool textShown: true
-    property color buttonColor: theme.secondaryColor
-    property color hoverColor: Qt.darker(buttonColor, 1.2)
+    property color containerColor: theme.secondaryColor
+    property color hoverColor: Qt.darker(containerColor, 1.2)
     property color textColor: theme.textColor
     property bool shadowEnabled: true
     property color shadowColor: theme.shadowColor
@@ -35,7 +39,7 @@ Item {
         id: background
         anchors.fill: parent
         radius: root.radius
-        color: root.buttonColor
+        color: root.containerColor
         visible: root.backgroundVisible
 
         layer.enabled: root.shadowEnabled && root.backgroundVisible
@@ -52,8 +56,8 @@ Item {
     ListView {
         id: listView
         anchors.fill: parent
-        anchors.margins: root.listPadding
-        spacing: root.listPadding
+        anchors.margins: root.horizontalPadding / 2
+        spacing: root.buttonsSpacing
         model: root.model
         clip: true
 
@@ -67,7 +71,7 @@ Item {
             property bool hovered: false
 
             color: root.backgroundVisible
-                ? (hovered ? root.hoverColor : root.buttonColor)
+                ? (hovered ? root.hoverColor : root.containerColor)
                 : "transparent"
 
             opacity: mouseArea.pressed ? 0.85 : 1.0
@@ -90,12 +94,11 @@ Item {
             }
 
             // === 内容布局 ===
-            RowLayout {
-                anchors.fill: parent
-                anchors.leftMargin: root.listPadding
-                anchors.rightMargin: root.listPadding
-                spacing: 12
-                Layout.alignment: Qt.AlignVCenter
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: root.horizontalPadding
+            anchors.rightMargin: root.horizontalPadding
+            spacing: root.labelSpacing
 
                 // 图标
                 Text {
@@ -110,25 +113,28 @@ Item {
                     horizontalAlignment: Text.AlignHCenter
                 }
 
-                Item {
-                    id: labelWrap
-                    width: root.textShown ? label.implicitWidth : 0
-                    height: label.implicitHeight
-                    Layout.preferredWidth: width
-                    Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-                    clip: true
+            Item {
+                id: labelWrap
+                width: root.textShown ? label.implicitWidth : 0
+                height: label.implicitHeight
+                Layout.preferredWidth: width
+                Layout.fillWidth: true
+                Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                clip: true
 
-                    Text {
-                        id: label
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: model.display
-                        opacity: root.textShown ? 1 : 0
-                        color: root.textColor
-                        font.pixelSize: root.itemFontSize
-                        elide: Text.ElideRight
-                        Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-                    }
+                Text {
+                    id: label
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: parent.left
+                    text: model.display
+                    opacity: root.textShown ? 1 : 0
+                    color: root.textColor
+                    font.pixelSize: root.itemFontSize
+                    horizontalAlignment: Text.AlignLeft
+                    elide: Text.ElideRight
+                    Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
                 }
+            }
             }
 
             // === 交互事件 ===

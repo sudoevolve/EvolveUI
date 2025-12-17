@@ -434,10 +434,22 @@ Rectangle {
 
         // === 交互层 ===
         MouseArea {
+            id: hoverMouseArea
             anchors.fill: parent
             hoverEnabled: true
             
+            Timer {
+                id: hideTimer
+                interval: 200
+                repeat: false
+                onTriggered: {
+                    root.hoveredIndex = -1;
+                }
+            }
+            
             onPositionChanged: function(mouse) {
+                hideTimer.stop();
+                
                 var series = root.effectiveDataSeries;
                 if (series.length === 0 || series[0].data.length === 0) return;
                 
@@ -447,16 +459,31 @@ Rectangle {
                 var index = Math.floor(mouse.x / stepX);
                 index = Math.max(0, Math.min(index, dataLength - 1));
                 
+                // 计算目标位置
+                var baseX = root.chartPadding + index * stepX + stepX / 2;
+                var targetX = Math.max(10, Math.min(baseX - tooltip.width/2, root.width - tooltip.width - 10));
+                
+                var dataValue = series[0].data[index].value;
+                var dataY = root.topPadding + root.chartHeight - (dataValue / root.maxValue) * root.chartHeight;
+                var targetY = Math.max(10, dataY - tooltip.height - 10);
+                
+                // 如果之前是隐藏状态，直接设置位置不显示动画
+                if (root.hoveredIndex === -1) {
+                    tooltip.x = targetX;
+                    tooltip.y = targetY;
+                } else {
+                    tooltip.x = targetX;
+                    tooltip.y = targetY;
+                }
+                
                 if (index !== root.hoveredIndex) {
                     root.hoveredIndex = index;
                     root.pointHovered(index, series[0].data[index]);
-                    chartCanvas.requestPaint(); // 重新绘制以显示悬停点
                 }
             }
             
             onExited: function() {
-                root.hoveredIndex = -1;
-                chartCanvas.requestPaint(); // 重新绘制以隐藏悬停点
+                hideTimer.start();
             }
             
             onClicked: function(mouse) {
@@ -493,7 +520,10 @@ Rectangle {
     // === 悬停提示框 ===
     Rectangle {
         id: tooltip
-        visible: root.hoveredIndex >= 0
+        // 使用 opacity 控制显示隐藏，配合 Behavior
+        opacity: root.hoveredIndex >= 0 ? 1 : 0
+        visible: opacity > 0
+        
         width: tooltipContent.width + 20
         height: tooltipContent.height + 16
         radius: 8
@@ -501,20 +531,21 @@ Rectangle {
         border.color: root.lineColor
         border.width: 1
         
-        // 动态定位
-        x: {
-            if (root.hoveredIndex < 0 || root.effectiveDataSeries.length === 0) return 0;
-            var dataLength = root.effectiveDataSeries[0].data.length;
-            var stepX = root.chartWidth / dataLength;
-            var baseX = root.chartPadding + root.hoveredIndex * stepX + stepX / 2;
-            return Math.max(10, Math.min(baseX - width/2, root.width - width - 10));
-        }
+        // 动态定位 - 现在由 MouseArea 控制
+        x: 0
+        y: 0
         
-        y: {
-            if (root.hoveredIndex < 0 || root.effectiveDataSeries.length === 0) return 0;
-            var dataValue = root.effectiveDataSeries[0].data[root.hoveredIndex].value;
-            var dataY = root.topPadding + root.chartHeight - (dataValue / root.maxValue) * root.chartHeight;
-            return Math.max(10, dataY - height - 10);
+        // 添加平滑移动动画
+        Behavior on x {
+            enabled: root.hoveredIndex >= 0
+            NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
+        }
+        Behavior on y {
+            enabled: root.hoveredIndex >= 0
+            NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
+        }
+        Behavior on opacity {
+            NumberAnimation { duration: 200 }
         }
 
         Column {

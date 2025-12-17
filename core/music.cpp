@@ -217,8 +217,6 @@ QStringList MusicLibrary::scanMusicFiles(const QString &rootPath, bool recursive
         }
     }
 
-    qDebug() << "scanMusicFiles:" << normalized << "recursive=" << recursive << "found=" << musicFiles.size();
-
     return musicFiles;
 }
 
@@ -444,20 +442,14 @@ void MusicLibrary::startWatching()
     QString projectRoot = defaultProjectRoot();
     if (!projectRoot.isEmpty()) {
         addWatchPath(projectRoot);
-        qDebug() << "开始监控项目根目录:" << projectRoot;
     }
     
     // 添加Windows音乐文件夹到监控
     QString windowsMusic = getWindowsMusicFolder();
     if (!windowsMusic.isEmpty()) {
         addWatchPath(windowsMusic);
-        qDebug() << "开始监控Windows音乐文件夹:" << windowsMusic;
     }
     
-    qDebug() << "文件监控已启动，监控路径数量:" << m_watchedPaths.size();
-    for (const QString &path : m_watchedPaths) {
-        qDebug() << "  监控路径:" << path;
-    }
 }
 
 void MusicLibrary::stopWatching()
@@ -499,17 +491,13 @@ int MusicLibrary::getCachedFileCount() const
 // 新增：文件监控槽函数
 void MusicLibrary::onDirectoryChanged(const QString &path)
 {
-    qDebug() << "检测到目录变化:" << path;
-    
     // 检查路径是否仍然存在
     QDir dir(path);
     if (!dir.exists()) {
-        qDebug() << "目录已被删除:" << path;
         // 重新添加父目录到监控（如果存在）
         QDir parentDir = dir;
         if (parentDir.cdUp() && parentDir.exists()) {
             m_watcher->addPath(parentDir.absolutePath());
-            qDebug() << "添加父目录到监控:" << parentDir.absolutePath();
         }
     }
     
@@ -519,16 +507,11 @@ void MusicLibrary::onDirectoryChanged(const QString &path)
 
 void MusicLibrary::onFileChanged(const QString &path)
 {
-    qDebug() << "检测到文件变化:" << path;
-    
     // 检查文件是否仍然存在
     QFileInfo fileInfo(path);
     if (!fileInfo.exists()) {
-        qDebug() << "文件已被删除或移动:" << path;
         // 从监控中移除
         m_watcher->removePath(path);
-    } else {
-        qDebug() << "文件已修改:" << path;
     }
     
     // 延迟扫描以避免频繁更新
@@ -586,15 +569,6 @@ void MusicLibrary::performDelayedScan()
         
         for (const QString &file : removedFiles) {
             emit fileRemoved(file);
-        }
-        
-        // 输出调试信息
-        qDebug() << "音乐文件变化检测:";
-        qDebug() << "  总文件数:" << newFiles.size();
-        qDebug() << "  新增文件:" << addedFiles.size();
-        qDebug() << "  删除文件:" << removedFiles.size();
-        if (!removedFiles.isEmpty()) {
-            qDebug() << "  删除的文件:" << removedFiles;
         }
     }
 }
