@@ -4,6 +4,7 @@
 
 EvolveUI 是一个现代化、高度风格统一的 Qt6 QML 前端组件库，致力于为跨平台应用程序提供一致、优雅、响应式的 UI 体验。灵感来源于 Telegram 动效、Material Design 规范，并充分考虑了桌面与移动端的交互习惯。
 
+🌐 **文档网站**: [https://evolveui.top/](https://evolveui.top/)
 ---
 
 ## ✨ 项目亮点
