@@ -548,6 +548,7 @@ ApplicationWindow {
                             
                             EButton {
                                 text: "Cancel"
+                                size: "xs"
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: 32
                                 backgroundVisible: false
@@ -557,9 +558,10 @@ ApplicationWindow {
                             
                             EButton {
                                 text: "Apply"
+                                size: "xs"
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: 32
-                                buttonColor: theme.focusColor
+                                containerColor: theme.focusColor
                                 textColor: "white"
                                 radius: 6
                                 shadowEnabled: true
