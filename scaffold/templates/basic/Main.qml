@@ -7,7 +7,7 @@ ApplicationWindow {
     width: 960
     height: 540
     visible: true
-    title: "{{PROJECT_NAME}}"
+    title: "demo1"
 
     color: theme.primaryColor
 
@@ -28,14 +28,14 @@ ApplicationWindow {
         Pane {
             id: sidebar
             property bool expanded: false
-            property int collapsedWidth: 84
+            property int collapsedWidth: 85
             property int expandedWidth: 140
-            padding: 10
+            padding: 0
             background: Rectangle {
                 color: theme.secondaryColor
             }
             implicitWidth: expanded ? expandedWidth : collapsedWidth
-            clip: true
+            clip: false
             SplitView.minimumWidth: collapsedWidth
             SplitView.maximumWidth: expandedWidth
             SplitView.preferredWidth: implicitWidth
@@ -60,7 +60,7 @@ ApplicationWindow {
                 spacing: 10
 
                 EList {
-                    backgroundVisible: false
+                    backgroundVisible:false
                     model: navModel
                     textShown: sidebar.expanded
                     Layout.fillWidth: true
